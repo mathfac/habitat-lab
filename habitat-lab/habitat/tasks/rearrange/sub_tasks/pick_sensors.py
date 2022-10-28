@@ -37,6 +37,67 @@ class DidPickObjectMeasure(Measure):
         self._did_pick = self._did_pick or self._sim.grasp_mgr.is_grasped
         self._metric = int(self._did_pick)
 
+@registry.register_measure
+class DroppedObjectMeasure(Measure):
+    cls_uuid: str = "dropped_object"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        self._sim = sim
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return DroppedObjectMeasure.cls_uuid
+
+    def reset_metric(self, *args, episode, **kwargs):
+        self._prev_picked = False
+        self.update_metric(*args, episode=episode, **kwargs)
+
+    def update_metric(self, *args, episode, **kwargs):
+        cur_picked = self._sim.grasp_mgr.is_grasped is not None
+
+        if self._prev_picked and not cur_picked:
+            self._metric = 1
+        else:
+            self._metric = 0
+
+        self._prev_picked = cur_picked
+
+@registry.register_measure
+class PickedWrongObjectMeasure(Measure):
+    cls_uuid: str = "picked_wrong_object"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        self._sim = sim
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return PickedWrongObjectMeasure.cls_uuid
+
+    def reset_metric(self, *args, episode, **kwargs):
+        self._prev_picked = False
+        self.update_metric(*args, episode=episode, **kwargs)
+
+    def update_metric(self, *args, episode, **kwargs):
+
+        # Get object that should be carried
+        idxs, _ = self._sim.get_targets()
+        targ_obj_idx = idxs[0] #TODO: handle multiple targets
+        abs_targ_obj_idx = self._sim.scene_obj_ids[targ_obj_idx]
+
+        # Get object that is currently carried
+        snapped_id = self._sim.grasp_mgr.snap_idx
+        cur_picked = snapped_id is not None
+        performed_pick_action = cur_picked and (not self._prev_picked)
+        is_holding_obj = snapped_id == abs_targ_obj_idx
+
+        if performed_pick_action and (not is_holding_obj):
+            self._metric = 1
+        else:
+            self._metric = 0
+            
+        self._prev_picked = cur_picked
 
 @registry.register_measure
 class RearrangePickReward(RearrangeReward):
@@ -51,7 +112,7 @@ class RearrangePickReward(RearrangeReward):
 
     @staticmethod
     def _get_uuid(*args, **kwargs):
-        return RearrangePickReward.cls_uuid
+        return RearrangePickReward.cls_uuid\
 
     def reset_metric(self, *args, episode, task, observations, **kwargs):
         task.measurements.check_measure_dependencies(

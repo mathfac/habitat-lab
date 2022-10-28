@@ -82,6 +82,11 @@ class MagicGraspAction(GripSimulatorTaskAction):
     def step(self, grip_action, should_step=True, *args, **kwargs):
         if grip_action is None:
             return
+        #if grip_action > 0.0:
+        #    if self.cur_grasp_mgr.is_grasped:
+        #        self._ungrasp()
+        #    elif not self.cur_grasp_mgr.is_grasped:
+        #        self._grasp()
 
         if grip_action >= 0 and not self.cur_grasp_mgr.is_grasped:
             self._grasp()

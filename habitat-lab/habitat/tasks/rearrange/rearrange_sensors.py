@@ -511,6 +511,39 @@ class ObjAtGoal(Measure):
             for idx, dist in obj_to_goal_dists.items()
         }
 
+@registry.register_measure
+class BaseToObjectDistance(UsesRobotInterface, Measure):
+    """
+    Gets the distance between the end-effector and all current target object COMs.
+    """
+
+    cls_uuid: str = "base_to_object_distance"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        self._sim = sim
+        self._config = config
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return BaseToObjectDistance.cls_uuid
+
+    def reset_metric(self, *args, episode, **kwargs):
+        self.update_metric(*args, episode=episode, **kwargs)
+
+    def update_metric(self, *args, episode, **kwargs):
+
+        current_pos = self._sim.robot.base_pos
+        current_pos = self._sim.safe_snap_point(current_pos)
+
+        idxs, _ = self._sim.get_targets()
+        scene_pos = self._sim.get_scene_pos()
+        target_pos = scene_pos[idxs]
+
+        self._metric = {}
+        for idx, pos in zip(idxs, target_pos):
+            dist = self._sim.geodesic_distance(current_pos, pos)
+            self._metric[str(idx)] = dist
 
 @registry.register_measure
 class EndEffectorToObjectDistance(UsesRobotInterface, Measure):

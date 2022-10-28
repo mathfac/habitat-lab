@@ -17,7 +17,10 @@ from habitat.tasks.rearrange.rearrange_sensors import (
     EndEffectorToObjectDistance,
     ObjectToGoalDistance,
     RearrangeReward,
+    EndEffectorToRestDistance,
+    BaseToObjectDistance
 )
+from habitat.tasks.rearrange.sub_tasks.nav_to_obj_sensors import RotDistToGoal
 
 
 @registry.register_sensor
@@ -44,16 +47,165 @@ class GlobalPredicatesSensor(Sensor):
 
     def _get_observation_space(self, *args, config, **kwargs):
         return spaces.Box(
-            shape=(len(self.predicates_list),),
-            low=0,
-            high=1,
-            dtype=np.float32,
+            shape=(len(self.predicates_list),), low=0, high=1, dtype=np.float32
         )
 
     def get_observation(self, observations, episode, *args, **kwargs):
         sim_info = self._task.pddl_problem.sim_info
         truth_values = [p.is_true(sim_info) for p in self.predicates_list]
         return np.array(truth_values, dtype=np.float32)
+
+
+@registry.register_measure
+class NavPickReward(RearrangeReward):
+    """
+    A reward based on L2 distances to object/goal.
+    """
+
+    cls_uuid: str = "nav_pick_reward"
+
+    @staticmethod
+    def _get_uuid(*arg_prev_holding_objs, **kwargs):
+        return NavPickReward.cls_uuid
+
+    def __init__(self, *args, **kwargs):
+        self._cur_rearrange_step = 0
+        super().__init__(*args, **kwargs)
+
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        self._cur_rearrange_step = 0
+        self._prev_picked = False
+        self.cur_dist = -1.0
+        self.arrived = False
+        self._did_give_pick_reward = {}
+        task.measurements.check_measure_dependencies(
+            self.uuid,
+            [
+                ObjectToGoalDistance.cls_uuid,
+                EndEffectorToObjectDistance.cls_uuid,
+                #CompositeBadCalledTerminate.cls_uuid
+            ],
+        )
+        self._cur_angle_dist = -1.0
+        to_goal = task.measurements.measures[
+            ObjectToGoalDistance.cls_uuid
+        ].get_metric()
+        to_obj = task.measurements.measures[
+            EndEffectorToObjectDistance.cls_uuid
+        ].get_metric()
+        self._prev_measures = (to_obj, to_goal)
+
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs,
+        )
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        super().update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs,
+        )
+        idxs, _ = self._sim.get_targets()
+        targ_obj_idx = idxs[self._cur_rearrange_step]
+        abs_targ_obj_idx = self._sim.scene_obj_ids[targ_obj_idx]
+        targ_obj_idx = str(targ_obj_idx)
+
+        to_obj = task.measurements.measures[
+            EndEffectorToObjectDistance.cls_uuid
+        ].get_metric()
+
+        base_to_obj = task.measurements.measures[
+            BaseToObjectDistance.cls_uuid
+        ].get_metric()
+
+        #bad_terminate = task.measurements.measures[
+        #    CompositeBadCalledTerminate.cls_uuid
+        #].get_metric()
+        ee_to_rest_distance = task.measurements.measures[
+            EndEffectorToRestDistance.cls_uuid
+        ].get_metric()
+
+        snapped_id = self._sim.grasp_mgr.snap_idx
+        cur_picked = snapped_id is not None
+        performed_pick_action = cur_picked and (not self._prev_picked)
+
+        #lv = task.actions['base_velocity'].base_vel_ctrl.linear_velocity[0]
+        #av = task.actions['base_velocity'].base_vel_ctrl.angular_velocity[1]
+        #av = 0
+        #aa = task.actions['arm_action'].arm_ctrlr.delta_pos
+
+        #lv_penalty = lv * 0.05
+        #av_penalty = av * 0.0005
+        #aa_penalty = 0
+        #if aa is not None:
+        #    aa_penalty = sum([abs(i) for i in aa])/len(aa) * 100 * to_obj
+        #self._metric = self._metric - lv_penalty - av_penalty - aa_penalty
+
+
+        # Distance reward (end effector to rest)
+        if cur_picked:
+            dist_to_goal = ee_to_rest_distance
+        # Distance reward (end effector to obj)
+        elif self.arrived:
+            dist_to_goal = to_obj[targ_obj_idx]
+        else:
+            dist_to_goal = base_to_obj[targ_obj_idx]
+
+        dist_diff = self.cur_dist - dist_to_goal
+        dist_diff = round(dist_diff, 4)
+        self._metric += self._config.dist_reward * dist_diff
+
+        if to_obj[targ_obj_idx] < self._config.arrived_distance and not self.arrived:
+            self.arrived = True
+            self._metric += self._config.arrived_reward
+
+        # Bad terminate
+        #self._metric -= bad_terminate * self._config.bad_terminate_penalty
+
+        # Angle dist
+        #if (
+        #    to_obj[targ_obj_idx] < self._config.turn_reward_dist
+        #):
+        #    angle_dist = task.measurements.measures[
+        #        RotDistToGoal.cls_uuid
+        #    ].get_metric()
+
+        #    if self._cur_angle_dist < 0:
+        #        angle_diff = 0.0
+        #    else:
+        #        angle_diff = self._cur_angle_dist - angle_dist
+
+        #    self._metric += self._config.angle_dist_reward * angle_diff
+        #    self._cur_angle_dist = angle_dist
+
+        # Pick reward
+        is_holding_obj = snapped_id == abs_targ_obj_idx
+        if performed_pick_action:
+            if is_holding_obj:
+                self._metric += self._config.pick_reward
+            else:
+                # picked the wrong object
+                self._metric -= self._config.wrong_pick_pen
+                if self._config.wrong_pick_should_end:
+                    self._task.should_end = True
+                return
+
+        # Drop penalization
+        if not cur_picked and self._prev_picked:
+            # Dropped the object
+            self._metric -= self._config.drop_pen
+            if self._config.drop_obj_should_end:
+                self._task.should_end = True
+
+        # Update memory
+        self.cur_dist = dist_to_goal
+        self._prev_picked = cur_picked
 
 
 @registry.register_measure
@@ -65,7 +217,7 @@ class MoveObjectsReward(RearrangeReward):
     cls_uuid: str = "move_obj_reward"
 
     @staticmethod
-    def _get_uuid(*args, **kwargs):
+    def _get_uuid(*arg_prev_holding_objs, **kwargs):
         return MoveObjectsReward.cls_uuid
 
     def __init__(self, *args, **kwargs):
@@ -79,8 +231,7 @@ class MoveObjectsReward(RearrangeReward):
         task.measurements.check_measure_dependencies(
             self.uuid,
             [
-                ObjectToGoalDistance.cls_uuid,
-                EndEffectorToObjectDistance.cls_uuid,
+                ObjectToGoalDistance.cls_uuid
             ],
         )
 
@@ -91,6 +242,9 @@ class MoveObjectsReward(RearrangeReward):
             EndEffectorToObjectDistance.cls_uuid
         ].get_metric()
         self._prev_measures = (to_obj, to_goal)
+        self._steps_without_holding = 0
+        self._single_rearrange_success = False
+        self._already_picked_once = False
 
         self.update_metric(
             *args,
@@ -142,19 +296,44 @@ class MoveObjectsReward(RearrangeReward):
             self._did_give_pick_reward[self._cur_rearrange_step] = True
 
         if (
-            dist < self._config.success_dist
-            and not is_holding_obj
-            and self._cur_rearrange_step < num_targs
+            not is_holding_obj
+            and self._steps_without_holding < 15
+            and to_goal[targ_obj_idx] < self._config.success_dist
         ):
-            self._metric += self._config.single_rearrange_reward
             self._cur_rearrange_step += 1
-            self._cur_rearrange_step = min(
-                self._cur_rearrange_step, num_targs - 1
-            )
+            self._single_rearrange_success = True
+            self._metric += self._config.single_rearrange_reward
+
+        if (
+            self._steps_without_holding == 15
+            and self._already_picked_once
+            and not self._single_rearrange_success
+        ):
+            self._cur_rearrange_step += 1
+            self._single_rearrange_success = False
+
+        self._cur_rearrange_step = min(self._cur_rearrange_step, num_targs - 1)
+
+        # if (
+        #    dist < self._config.success_dist
+        #    and not is_holding_obj
+        #    and self._cur_rearrange_step < num_targs
+        # ):
+        #    self._metric += self._config.single_rearrange_reward
+        #    self._cur_rearrange_step += 1
+        #    self._cur_rearrange_step = min(
+        #        self._cur_rearrange_step, num_targs - 1
+        #    )
 
         self._metric += self._config.dist_reward * dist_diff
         self._prev_measures = (to_obj, to_goal)
         self._prev_holding_obj = is_holding_obj
+        self._already_picked_once = is_holding_obj or self._already_picked_once
+        if is_holding_obj:
+            self._steps_without_holding = 0
+            self.single_rearrange_success = True
+        if not is_holding_obj:
+            self._steps_without_holding += 1
 
 
 @registry.register_measure
@@ -182,8 +361,7 @@ class CompositeBadCalledTerminate(Measure):
 
     def reset_metric(self, *args, task, **kwargs):
         task.measurements.check_measure_dependencies(
-            self.uuid,
-            [DoesWantTerminate.cls_uuid, CompositeSuccess.cls_uuid],
+            self.uuid, [DoesWantTerminate.cls_uuid, CompositeSuccess.cls_uuid]
         )
         self.update_metric(*args, task=task, **kwargs)
 
@@ -218,8 +396,7 @@ class CompositeSuccess(Measure):
     def reset_metric(self, *args, task, **kwargs):
         if self._config.must_call_stop:
             task.measurements.check_measure_dependencies(
-                self.uuid,
-                [DoesWantTerminate.cls_uuid],
+                self.uuid, [DoesWantTerminate.cls_uuid]
             )
         self.update_metric(*args, task=task, **kwargs)
 
@@ -239,6 +416,47 @@ class CompositeSuccess(Measure):
 
 
 @registry.register_measure
+class NavPickSuccess(Measure):
+    """
+    Is holding the object and within the success distance to the rest position of the object?
+    """
+
+    cls_uuid: str = "navpick_success"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        super().__init__(**kwargs)
+        self._sim = sim
+        self._config = config
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return NavPickSuccess.cls_uuid
+
+    def reset_metric(self, *args, task, **kwargs):
+        task.measurements.check_measure_dependencies(
+            self.uuid, [EndEffectorToObjectDistance.cls_uuid, EndEffectorToRestDistance.cls_uuid]
+        )
+        self.update_metric(*args, task=task, **kwargs)
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+       
+        ee_to_rest_distance = task.measurements.measures[
+            EndEffectorToRestDistance.cls_uuid
+        ].get_metric()
+
+        # Is the agent holding the object and it's at the start?
+        abs_targ_obj_idx = self._sim.scene_obj_ids[task.abs_targ_idx]
+
+        # Check that we are holding the right object and the object is actually
+        # being held.
+        self._metric = (
+            abs_targ_obj_idx == self._sim.grasp_mgr.snap_idx
+            and not self._sim.grasp_mgr.is_violating_hold_constraint()
+            #and ee_to_rest_distance < self._config.ee_resting_success_threshold
+        )
+
+
+@registry.register_measure
 class CompositeStageGoals(Measure):
     """
     Adds to the metrics `[task_NAME]_success`: Did the agent complete a
@@ -254,10 +472,7 @@ class CompositeStageGoals(Measure):
 
     def reset_metric(self, *args, **kwargs):
         self._stage_succ = []
-        self.update_metric(
-            *args,
-            **kwargs,
-        )
+        self.update_metric(*args, **kwargs)
 
     def update_metric(self, *args, task, **kwargs):
         self._metric = {}

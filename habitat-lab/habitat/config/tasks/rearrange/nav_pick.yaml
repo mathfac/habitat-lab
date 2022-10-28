@@ -2,6 +2,7 @@ habitat:
     gym:
         auto_name: "NavPick"
         obs_keys:
+        - robot_head_rgb
         - robot_head_depth
         - relative_resting_position
         - obj_start_sensor
@@ -9,7 +10,7 @@ habitat:
         - joint
         - is_holding
     environment:
-        max_episode_steps: 500
+        max_episode_steps: 800
     dataset:
         type: RearrangeDataset-v0
         split: train
@@ -18,10 +19,15 @@ habitat:
     task:
         type: RearrangeCompositeTask-v0
 
-        reward_measure: "move_obj_reward"
-        success_measure: "composite_success"
+        end_effector_to_rest_distance:
+            type: "EndEffectorToRestDistance"
+        relative_resting_pos_sensor:
+            type: "RelativeRestingPositionSensor"
+
+        reward_measure: "nav_pick_reward"
+        success_measure: "navpick_success"
         success_reward: 100.0
-        slack_reward: -0.01
+        slack_reward: 0.0
         end_on_success: True
 
         count_obj_collisions: true
@@ -33,49 +39,95 @@ habitat:
         task_spec: nav_pick
         pddl_domain_def: replica_cad
         sensors:
-        - relative_resting_pos_sensor
-        - target_start_sensor
-        - joint_sensor
-        - is_holding_sensor
-        - end_effector_sensor
-        - target_start_gps_compass_sensor
+          - relative_resting_pos_sensor
+          - target_start_sensor
+          - joint_sensor
+          - is_holding_sensor
+          - end_effector_sensor
+          - target_start_gps_compass_sensor
         force_terminate:
             type: ForceTerminate
-            max_accum_force: -1.0
+            max_accum_force: 100_000.0
         robot_force:
             type: RobotForce
             min_force: 20.0
-        move_objects_reward:
-            type: MoveObjectsReward
-            pick_reward: 1.0
-            success_dist: 0.15
-            single_rearrange_reward: 1.0
-            dist_reward: 1.0
+        composite_bad_called_terminate:
+            type: CompositeBadCalledTerminate
+
+        navpick_success:
+            type: NavPickSuccess
+            ee_resting_success_threshold: 0.1
+
+        base_to_object_distance:
+            type: BaseToObjectDistance
+
+        dropped_object:
+            type: DroppedObjectMeasure
+            ee_resting_success_threshold: 0.1
+
+        picked_wrong_object:
+            type: PickedWrongObjectMeasure
+            ee_resting_success_threshold: 0.1
+
+        nav_pick_reward:
+            type: NavPickReward
+            # Reward for fistance from end effector to object
+            dist_reward: 10.0
+
+            # If wants to terminate and its not holding
+            bad_terminate_penalty: 15.0
+
+            # When it's near we want the robot to face the obj (angle reward)
+            turn_reward_dist: 1.0
+            angle_dist_reward: 5.0
+
+            # Reward for when it picks the right object
+            pick_reward: 0.0
+
+            # Picked wrong object (penalize)
+            wrong_pick_pen: 10.0
+            wrong_pick_should_end: true
+
+            # Dropped (penalize)
+            drop_pen: 10.0
+            drop_obj_should_end: true
+
+            # Arrived to obj
+            arrived_distance: 0.5
+            arrived_reward: 20.0
+            
             # General Rearrange Reward config
             constraint_violate_pen: 10.0
-            force_pen: 0.0
+            force_pen: 0.001
             max_force_pen: 1.0
             force_end_pen: 10.0
 
         measurements:
-        - object_to_goal_distance
-        - robot_force
-        - force_terminate
-        - robot_colls
-        - end_effector_to_object_distance
-        - does_want_terminate
-        - composite_success
-        - composite_bad_called_terminate
-        - num_steps
-        - did_violate_hold_constraint
-        - move_objects_reward
-        - composite_stage_goals
-
+          - base_to_object_distance
+          - dropped_object
+          - picked_wrong_object
+          - object_to_goal_distance
+          - robot_force
+          - force_terminate
+          #- rot_dist_to_goal
+          - did_pick_object
+          - "end_effector_to_rest_distance"
+          - robot_colls
+          - end_effector_to_object_distance
+          #- does_want_terminate
+          #- composite_success
+          - navpick_success
+          #- composite_bad_called_terminate
+          - num_steps
+          - did_violate_hold_constraint
+          - nav_pick_reward
+          - composite_stage_goals
+          
         actions:
             arm_action:
                 type: ArmAction
                 arm_controller: ArmRelPosAction
-                grip_controller: MagicGraspAction
+                grip_controller: SuctionGraspAction
                 arm_joint_dimensionality: 7
                 grasp_thresh_dist: 0.15
                 disable_grip: false
@@ -90,18 +142,18 @@ habitat:
                 allow_back: true
                 min_abs_lin_speed: 1.0
                 min_abs_ang_speed: 1.0
-            rearrange_stop:
-                type: RearrangeStopAction
+            #rearrange_stop:
+            #    type: RearrangeStopAction
         possible_actions:
         - arm_action
         - base_velocity
-        - rearrange_stop
+        #- rearrange_stop
     simulator:
         additional_object_paths:
             - "data/objects/ycb/configs/"
         action_space_config: v0
         grasp_impulse: 1000.0
-        hold_thresh: 0.09
+        hold_thresh: 0.15
         ac_freq_ratio: 4
         debug_render: false
         debug_render_goal: true
@@ -128,11 +180,11 @@ habitat:
             robot_type: FetchRobot
             ik_arm_urdf: ./data/robots/hab_fetch/robots/fetch_onlyarm.urdf
         head_rgb_sensor:
-            width: 128
-            height: 128
+            width: 256
+            height: 256
         head_depth_sensor:
-            width: 128
-            height: 128
+            width: 256
+            height: 256
             min_depth: 0.0
             max_depth: 10.0
             normalize_depth: true

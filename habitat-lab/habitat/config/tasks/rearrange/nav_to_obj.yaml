@@ -7,7 +7,7 @@ habitat:
         - joint
         - nav_to_skill
     environment:
-        max_episode_steps: 400
+        max_episode_steps: 600
     dataset:
         type: RearrangeDataset-v0
         split: train
@@ -17,7 +17,7 @@ habitat:
         type: NavToObjTask-v0
         must_look_at_targ: true
         force_regenerate: false
-        object_in_hand_sample_prob: 0.167
+        object_in_hand_sample_prob: 0.4
         constraint_violation_ends_episode: false
         constraint_violation_drops_object: true
         count_obj_collisions: true
@@ -25,12 +25,12 @@ habitat:
         task_spec_base_path: tasks/rearrange/pddl/
         task_spec: nav_pick_nav_place
         pddl_domain_def: replica_cad
-        obj_succ_thresh: 0.3
-        art_succ_thresh: 0.15
+        obj_succ_thresh: 0.35
+        art_succ_thresh: 0.2
         reward_measure: nav_to_obj_reward
         success_measure: nav_to_obj_success
-        success_reward: 10.0
-        slack_reward: 0.0
+        success_reward: 100.0
+        slack_reward: -.01
         end_on_success: true
         target_start_point_goal_sensor:
             type: TargetOrGoalStartPointGoalSensor
@@ -49,7 +49,7 @@ habitat:
             min_force: 20.0
         force_terminate:
             type: ForceTerminate
-            max_accum_force: -1.0
+            max_accum_force: 100000.0
             max_instant_force: 10000.0
         robot_colls:
             type: RobotCollisions
@@ -72,16 +72,16 @@ habitat:
             angle_dist_reward: 1.0
             dist_reward: 10.0
             constraint_violate_pen: 10.0
-            force_pen: 0.0
+            force_pen: 0.01
             max_force_pen: 1.0
-            force_end_pen: 5.0
+            force_end_pen: 10.0
         nav_to_pos_succ:
             type: NavToPosSucc
-            success_distance: 0.3
+            success_distance: 0.35
         rearrange_nav_to_obj_success:
             type: NavToObjSuccess
             must_look_at_targ: true
-            success_angle_dist: 0.3
+            success_angle_dist: 0.35
             heuristic_stop: false
         measurements:
         - object_to_goal_distance
@@ -98,8 +98,8 @@ habitat:
         actions:
             base_velocity:
                 type: BaseVelAction
-                lin_speed: 10.0
-                ang_speed: 10.0
+                ang_speed: 4.0
+                lin_speed: 4.0
                 allow_dyn_slide: true
                 allow_back: true
                 end_on_stop: true

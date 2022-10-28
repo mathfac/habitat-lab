@@ -73,8 +73,8 @@ habitat:
                 ee_ctrl_lim: 0.015
             base_velocity:
                 type: BaseVelAction
-                lin_speed: 10.0
-                ang_speed: 10.0
+                lin_speed: 4.0
+                ang_speed: 4.0
                 allow_dyn_slide: true
                 end_on_stop: false
                 allow_back: true
@@ -103,7 +103,7 @@ habitat:
         grasp_impulse: 10000.0
         hold_thresh: 0.2
         ac_freq_ratio: 4
-        debug_render: false
+        debug_render: true
         debug_render_goal: true
         agents:
         - agent_0

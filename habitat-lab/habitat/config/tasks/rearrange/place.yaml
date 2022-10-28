@@ -8,7 +8,7 @@ habitat:
         - is_holding
         - relative_resting_position
     environment:
-        max_episode_steps: 200
+        max_episode_steps: 250
     dataset:
         type: RearrangeDataset-v0
         split: train
@@ -18,14 +18,14 @@ habitat:
         type: RearrangePlaceTask-v0
         count_obj_collisions: true
         should_enforce_target_within_reach: false
-        base_angle_noise: 0.15
-        base_noise: 0.05
+        base_angle_noise: 0.50
+        base_noise: 2.0
         force_regenerate: false
         constraint_violation_ends_episode: false
         constraint_violation_drops_object: true
         reward_measure: place_reward
         success_measure: place_success
-        success_reward: 10.0
+        success_reward: 100.0
         slack_reward: 0.0
         end_on_success: true
         easy_init: false
@@ -87,10 +87,10 @@ habitat:
             succ_thresh: 0.15
         place_reward:
             type: PlaceReward
-            dist_reward: 20.0
+            dist_reward: 50.0
             succ_reward: 10.0
             place_reward: 20.0
-            drop_pen: 0.0
+            drop_pen: 40.0
             use_diff: true
             wrong_drop_should_end: false
             constraint_violate_pen: 10.0
@@ -122,8 +122,18 @@ habitat:
                 disable_grip: false
                 delta_pos_limit: 0.0125
                 ee_ctrl_lim: 0.015
+            base_velocity:
+                type: BaseVelAction
+                lin_speed: 4.0
+                ang_speed: 4.0
+                allow_dyn_slide: true
+                allow_back: true
+                end_on_stop: true
+                min_abs_lin_speed: 1.0
+                min_abs_ang_speed: 1.0
         possible_actions:
-        - arm_action
+          - arm_action
+          - base_velocity
     simulator:
         additional_object_paths:
         - data/objects/ycb/configs/
@@ -159,7 +169,7 @@ habitat:
             gpu_device_id: 0
             gpu_gpu: false
             physics_config_file: ./data/default.physics_config.json
-        seed: 100
+        seed: 120
         type: RearrangeSim-v0
         arm_depth_sensor:
             width: 128

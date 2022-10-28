@@ -115,6 +115,7 @@ _C.habitat_baselines.rl.policy.name = "PointNavResNetPolicy"
 _C.habitat_baselines.rl.policy.action_distribution_type = (
     "categorical"  # or 'gaussian'
 )
+_C.habitat_baselines.rl.policy.order_keys = False
 # If the list is empty, all keys will be included.
 # For gaussian action distribution:
 _C.habitat_baselines.rl.policy.action_dist = CN()

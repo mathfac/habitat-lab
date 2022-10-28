@@ -130,7 +130,10 @@ class ArmRelPosAction(RobotAction):
     The arm motor targets are offset by the delta joint values specified by the
     action
     """
-
+    def __init__(self, *args, sim: RearrangeSim, **kwargs):
+        self.delta_pos = None
+        super().__init__(*args, sim=sim, **kwargs)
+        
     @property
     def action_space(self):
         return spaces.Box(
@@ -146,6 +149,7 @@ class ArmRelPosAction(RobotAction):
         delta_pos *= self._config.delta_pos_limit
         # The actual joint positions
         self._sim: RearrangeSim
+        self.delta_pos = delta_pos
         self.cur_robot.arm_motor_pos = delta_pos + self.cur_robot.arm_motor_pos
 
 

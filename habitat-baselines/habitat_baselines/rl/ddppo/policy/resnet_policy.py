@@ -35,7 +35,6 @@ from habitat_baselines.rl.models.rnn_state_encoder import (
 )
 from habitat_baselines.rl.ppo import Net, NetPolicy
 from habitat_baselines.utils.common import get_num_actions
-use_mae = True
 
 @baseline_registry.register_policy
 class PointNavResNetPolicy(NetPolicy):
@@ -400,7 +399,7 @@ class PointNavResNetNet(Net):
             use_mae = policy_config.use_mae
         except:
             pass
-        if use_mae is True:
+        if use_mae is policy_config.use_mae:
             from habitat_baselines.rl.ddppo.policy.multimae import MMAE
             self.visual_encoder = MMAE(use_obs_space)
 

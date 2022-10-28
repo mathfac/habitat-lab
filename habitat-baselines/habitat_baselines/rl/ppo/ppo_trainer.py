@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import torch
 import tqdm
+import gym
 from gym import spaces
 from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
@@ -134,7 +135,10 @@ class PPOTrainer(BaseRLTrainer):
         policy = baseline_registry.get_policy(
             self.config.habitat_baselines.rl.policy.name
         )
+
         observation_space = self.obs_space
+        observation_space = dict([(k,v) for k,v in observation_space.items() if k != 'robot_third_rgb'])
+        observation_space = gym.spaces.Dict(observation_space)
         self.obs_transforms = get_active_obs_transforms(self.config)
         observation_space = apply_obs_transforms_obs_space(
             observation_space, self.obs_transforms
@@ -279,7 +283,9 @@ class PPOTrainer(BaseRLTrainer):
             self.agent.load_state_dict(resume_state["state_dict"])
             self.agent.optimizer.load_state_dict(resume_state["optim_state"])
         if self._is_distributed:
-            self.agent.init_distributed(find_unused_params=False)  # type: ignore
+            self.agent.init_distributed(
+                find_unused_params=False
+            )  # type: ignore
 
         logger.info(
             "agent number of parameters: {}".format(
@@ -319,7 +325,9 @@ class PPOTrainer(BaseRLTrainer):
 
         observations = self.envs.reset()
         batch = batch_obs(observations, device=self.device)
-        batch = apply_obs_transforms_batch(batch, self.obs_transforms)  # type: ignore
+        batch = apply_obs_transforms_batch(
+            batch, self.obs_transforms
+        )  # type: ignore
 
         if self._static_encoder:
             with inference_mode():
@@ -509,7 +517,9 @@ class PPOTrainer(BaseRLTrainer):
 
         t_update_stats = time.time()
         batch = batch_obs(observations, device=self.device)
-        batch = apply_obs_transforms_batch(batch, self.obs_transforms)  # type: ignore
+        batch = apply_obs_transforms_batch(
+            batch, self.obs_transforms
+        )  # type: ignore
 
         rewards = torch.tensor(
             rewards_l,
@@ -527,8 +537,14 @@ class PPOTrainer(BaseRLTrainer):
 
         self.current_episode_reward[env_slice] += rewards
         current_ep_reward = self.current_episode_reward[env_slice]
-        self.running_episode_stats["reward"][env_slice] += current_ep_reward.where(done_masks, current_ep_reward.new_zeros(()))  # type: ignore
-        self.running_episode_stats["count"][env_slice] += done_masks.float()  # type: ignore
+        self.running_episode_stats["reward"][
+            env_slice
+        ] += current_ep_reward.where(
+            done_masks, current_ep_reward.new_zeros(())
+        )  # type: ignore
+        self.running_episode_stats["count"][
+            env_slice
+        ] += done_masks.float()  # type: ignore
         for k, v_k in self._extract_scalars_from_infos(infos).items():
             v = torch.tensor(
                 v_k,
@@ -539,7 +555,9 @@ class PPOTrainer(BaseRLTrainer):
                 self.running_episode_stats[k] = torch.zeros_like(
                     self.running_episode_stats["count"]
                 )
-            self.running_episode_stats[k][env_slice] += v.where(done_masks, v.new_zeros(()))  # type: ignore
+            self.running_episode_stats[k][env_slice] += v.where(
+                done_masks, v.new_zeros(())
+            )  # type: ignore
 
         self.current_episode_reward[env_slice].masked_fill_(done_masks, 0.0)
 
@@ -645,9 +663,7 @@ class PPOTrainer(BaseRLTrainer):
         deltas["count"] = max(deltas["count"], 1.0)
 
         writer.add_scalar(
-            "reward",
-            deltas["reward"] / deltas["count"],
-            self.num_steps_done,
+            "reward", deltas["reward"] / deltas["count"], self.num_steps_done
         )
 
         # Check to see if there are any metrics
@@ -672,10 +688,7 @@ class PPOTrainer(BaseRLTrainer):
             == 0
         ):
             logger.info(
-                "update: {}\tfps: {:.3f}\t".format(
-                    self.num_updates_done,
-                    fps,
-                )
+                "update: {}\tfps: {:.3f}\t".format(self.num_updates_done, fps)
             )
 
             logger.info(
@@ -726,6 +739,22 @@ class PPOTrainer(BaseRLTrainer):
 
         count_checkpoints = 0
         prev_time = 0
+        if (
+            "use_cosine_decay_lr" in self.config.habitat_baselines.ppo
+            and self.config.habitat_baselines.ppo.use_cosine_decay_lr
+        ):  
+            def decay_function(step):
+                alpha = self.config.habitat_baselines.rl.ppo.lr_cosine_decay_alpha
+                decay_steps = self.config.TOTAL_NUM_STEPS
+                step = min(step, decay_steps)
+                cosine_decay = 0.5 * (1 + cos(pi * step / decay_steps))
+                decayed = (1 - alpha) * cosine_decay + alpha
+
+                return decayed
+
+        else:
+            def decay_function(x):
+                return 1 - self.percent_done()
 
         lr_scheduler = LambdaLR(
             optimizer=self.agent.optimizer,
@@ -770,8 +799,10 @@ class PPOTrainer(BaseRLTrainer):
             while not self.is_done():
                 profiling_wrapper.on_start_step()
                 profiling_wrapper.range_push("train update")
-
-                if ppo_cfg.use_linear_clip_decay:
+                if (
+                    ppo_cfg.use_linear_clip_decay
+                    or ppo_cfg.use_cosine_clip_decay
+                ):
                     self.agent.clip_param = ppo_cfg.clip_param * (
                         1 - self.percent_done()
                     )
@@ -852,11 +883,8 @@ class PPOTrainer(BaseRLTrainer):
                 if ppo_cfg.use_linear_lr_decay:
                     lr_scheduler.step()  # type: ignore
 
-                self.num_updates_done += 1
-                losses = self._coalesce_post_step(
-                    losses,
-                    count_steps_delta,
-                )
+                losses = self._coalesce_post_step(losses, count_steps_delta)
+            
 
                 self._training_log(writer, losses, prev_time)
 

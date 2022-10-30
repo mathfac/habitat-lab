@@ -858,7 +858,24 @@ class DidViolateHoldConstraintMeasure(UsesRobotInterface, Measure):
             self.robot_id
         ).grasp_mgr.is_violating_hold_constraint()
 
+@registry.register_measure
+class DoesWantTerminate(Measure):
+    """
+    Returns 1 if the agent has called the stop action and 0 otherwise.
+    """
 
+    cls_uuid: str = "does_want_terminate"
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return DoesWantTerminate.cls_uuid
+
+    def reset_metric(self, *args, **kwargs):
+        self.update_metric(*args, **kwargs)
+
+    def update_metric(self, *args, task, **kwargs):
+        self._metric = task.actions["REARRANGE_STOP"].does_want_terminate
+        
 class RearrangeReward(UsesRobotInterface, Measure):
     """
     An abstract class defining some measures that are always a part of any

@@ -272,10 +272,6 @@ class BaseVelAction(RobotAction):
         self.cur_robot.sim_obj.joint_velocities = set_dat["vel"]
         self.cur_robot.sim_obj.joint_forces = set_dat["pos"]
 
-    def reset(self, *args, **kwargs):
-        super().reset(*args, **kwargs)
-        self.does_want_terminate = False
-
     def update_base(self):
 
         ctrl_freq = self._sim.ctrl_freq
@@ -322,14 +318,6 @@ class BaseVelAction(RobotAction):
         ang_vel = np.clip(ang_vel, -1, 1) * self._config.ang_speed
         if not self._config.allow_back:
             lin_vel = np.maximum(lin_vel, 0)
-
-        if (
-            abs(lin_vel) < self._config.min_abs_lin_speed
-            and abs(ang_vel) < self._config.min_abs_ang_speed
-        ):
-            self.does_want_terminate = True
-        else:
-            self.does_want_terminate = False
 
         self.base_vel_ctrl.linear_velocity = mn.Vector3(lin_vel, 0, 0)
         self.base_vel_ctrl.angular_velocity = mn.Vector3(0, ang_vel, 0)

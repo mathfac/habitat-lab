@@ -29,8 +29,8 @@ habitat:
         art_succ_thresh: 0.2
         reward_measure: nav_to_obj_reward
         success_measure: nav_to_obj_success
-        success_reward: 100.0
-        slack_reward: -.01
+        success_reward: 10.0
+        slack_reward: -.005
         end_on_success: true
         target_start_point_goal_sensor:
             type: TargetOrGoalStartPointGoalSensor
@@ -49,8 +49,8 @@ habitat:
             min_force: 20.0
         force_terminate:
             type: ForceTerminate
-            max_accum_force: 100000.0
-            max_instant_force: 10000.0
+            max_accum_force: 100_000.0
+            max_instant_force: 10_000.0
         robot_colls:
             type: RobotCollisions
         object_to_goal_distance:
@@ -68,21 +68,22 @@ habitat:
         rearrange_nav_to_obj_reward:
             type: NavToObjReward
             should_reward_turn: true
-            turn_reward_dist: 0.6
+            turn_reward_dist: 1.0
             angle_dist_reward: 1.0
-            dist_reward: 10.0
-            constraint_violate_pen: 10.0
-            force_pen: 0.01
+            dist_reward: 1.0
+            constraint_violate_pen: 1.0
+            force_pen: 0.0001
             max_force_pen: 1.0
-            force_end_pen: 10.0
+            force_end_pen: 2.0
         nav_to_pos_succ:
             type: NavToPosSucc
-            success_distance: 0.35
+            success_distance: 1.0
         rearrange_nav_to_obj_success:
             type: NavToObjSuccess
             must_look_at_targ: true
-            success_angle_dist: 0.35
+            success_angle_dist: 0.785489 # 45 degrees
             heuristic_stop: false
+            must_call_stop: true
         measurements:
         - object_to_goal_distance
         - robot_force
@@ -95,11 +96,12 @@ habitat:
         - bad_called_terminate
         - rearrange_nav_to_obj_reward
         - num_steps
+        - does_want_terminate
         actions:
             base_velocity:
                 type: BaseVelAction
-                ang_speed: 4.0
-                lin_speed: 4.0
+                ang_speed: 7.5
+                lin_speed: 7.5
                 allow_dyn_slide: true
                 allow_back: true
                 end_on_stop: true
@@ -107,6 +109,7 @@ habitat:
                 min_abs_ang_speed: 1.0
         possible_actions:
         - base_velocity
+        - rearrange_stop
     simulator:
         additional_object_paths:
         - data/objects/ycb/configs/

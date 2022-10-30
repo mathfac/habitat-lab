@@ -88,7 +88,7 @@ class RearrangePickTaskV1(RearrangeTask):
         start_pos = orig_start_pos
 
         forward = np.array([1.0, 0, 0])
-        dist_thresh = 0.1
+        dist_thresh = 4.0
         did_collide = False
 
         if self._config.should_enforce_target_within_reach:

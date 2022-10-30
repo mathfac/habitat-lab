@@ -8,7 +8,7 @@ habitat:
         - is_holding
         - relative_resting_position
     environment:
-        max_episode_steps: 250
+        max_episode_steps: 350
     dataset:
         type: RearrangeDataset-v0
         split: train
@@ -19,14 +19,14 @@ habitat:
         count_obj_collisions: true
         should_enforce_target_within_reach: false
         base_angle_noise: 0.50
-        base_noise: 2.0
+        base_noise: 1.5
         force_regenerate: false
         constraint_violation_ends_episode: false
         constraint_violation_drops_object: true
         reward_measure: place_reward
         success_measure: place_success
-        success_reward: 100.0
-        slack_reward: 0.0
+        success_reward: 10.0
+        slack_reward: -0.05
         end_on_success: true
         easy_init: false
         target_start_sensor:
@@ -87,16 +87,15 @@ habitat:
             succ_thresh: 0.15
         place_reward:
             type: PlaceReward
-            dist_reward: 50.0
-            succ_reward: 10.0
-            place_reward: 20.0
-            drop_pen: 40.0
+            dist_reward: 5.0
+            place_reward: 2.0
+            drop_pen: 4.0
             use_diff: true
             wrong_drop_should_end: false
             constraint_violate_pen: 10.0
-            force_pen: 0.001
+            force_pen: 0.0001
             max_force_pen: 1.0
-            force_end_pen: 10.0
+            force_end_pen: 2.0
         place_success:
             type: PlaceSuccess
             ee_resting_success_threshold: 0.15
@@ -124,8 +123,8 @@ habitat:
                 ee_ctrl_lim: 0.015
             base_velocity:
                 type: BaseVelAction
-                lin_speed: 4.0
-                ang_speed: 4.0
+                lin_speed: 7.5
+                ang_speed: 7.5
                 allow_dyn_slide: true
                 allow_back: true
                 end_on_stop: true

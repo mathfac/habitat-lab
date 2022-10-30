@@ -80,7 +80,7 @@ _C.habitat.task.constraint_violation_drops_object = False
 _C.habitat.task.force_regenerate = (
     False  # Forced to regenerate the starts even if they are already cached.
 )
-_C.habitat.task.should_save_to_cache = True  # Saves the generated starts to a cache if they are not already generated.
+_C.habitat.task.should_save_to_cache = False  # Saves the generated starts to a cache if they are not already generated.
 _C.habitat.task.must_look_at_targ = True
 _C.habitat.task.object_in_hand_sample_prob = 0.167
 _C.habitat.task.gfx_replay_dir = "data/replays"

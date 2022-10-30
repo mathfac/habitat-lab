@@ -394,12 +394,7 @@ class PointNavResNetNet(Net):
                 }
             )
 
-        use_mae = False
-        try:
-            use_mae = policy_config.use_mae
-        except:
-            pass
-        if use_mae is policy_config.use_mae:
+        if policy_config.use_mae:
             from habitat_baselines.rl.ddppo.policy.multimae import MMAE
             self.visual_encoder = MMAE(use_obs_space)
 

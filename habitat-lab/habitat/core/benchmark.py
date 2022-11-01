@@ -163,7 +163,7 @@ class Benchmark:
         agg_metrics: Dict = defaultdict(float)
 
         count_episodes = 0
-
+        num_episodes = 20
         pbar = tqdm(total=num_episodes)
         while count_episodes < num_episodes:
             observations = self._env.reset()

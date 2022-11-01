@@ -14,10 +14,40 @@ from collections import defaultdict
 from typing import Dict, Optional
 
 from tqdm import tqdm
+import numpy as np
 
 from habitat.config.default import get_config
 from habitat.core.agent import Agent
 from habitat.core.env import Env
+
+
+METRICS_BLACKLIST = {"top_down_map", "collisions.is_collision"}
+
+def _extract_scalars_from_info(
+    info
+):
+    result = {}
+    for k, v in info.items():
+        if not isinstance(k, str) or k in METRICS_BLACKLIST:
+            continue
+
+        if isinstance(v, dict):
+            result.update(
+                {
+                    k + "." + subk: subv
+                    for subk, subv in _extract_scalars_from_info(
+                        v
+                    ).items()
+                    if isinstance(subk, str)
+                    and k + "." + subk not in METRICS_BLACKLIST
+                }
+            )
+        # Things that are scalar-like will have an np.size of 1.
+        # Strings also have an np.size of 1, so explicitly ban those
+        elif np.size(v) == 1 and not isinstance(v, str):
+            result[k] = float(v)
+
+    return result
 
 
 class Benchmark:
@@ -144,6 +174,7 @@ class Benchmark:
                 observations = self._env.step(action)
 
             metrics = self._env.get_metrics()
+            metrics = _extract_scalars_from_info(metrics)
             for m, v in metrics.items():
                 if isinstance(v, dict):
                     for sub_m, sub_v in v.items():

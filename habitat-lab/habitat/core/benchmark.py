@@ -136,7 +136,10 @@ class Benchmark:
             )
 
             for m, v in metrics["metrics"].items():
-                agg_metrics[m] += v
+                try:
+                    agg_metrics[m] += v
+                except:
+                    pass
             count_episodes += 1
 
         avg_metrics = {k: v / count_episodes for k, v in agg_metrics.items()}

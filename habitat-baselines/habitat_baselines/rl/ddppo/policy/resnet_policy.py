@@ -394,17 +394,26 @@ class PointNavResNetNet(Net):
                 }
             )
 
-        if policy_config.use_mae:
-            from habitat_baselines.rl.ddppo.policy.multimae import MMAE
-            self.visual_encoder = MMAE(use_obs_space)
-
-        else:
+        try:
+            if policy_config.use_mae:
+                from habitat_baselines.rl.ddppo.policy.multimae import MMAE
+                self.visual_encoder = MMAE(use_obs_space)
+            else:
+                self.visual_encoder = ResNetEncoder(
+                    use_obs_space,
+                    baseplanes=resnet_baseplanes,
+                    ngroups=resnet_baseplanes // 2,
+                    make_backbone=getattr(resnet, backbone),
+                )
+        except:
             self.visual_encoder = ResNetEncoder(
-                use_obs_space,
-                baseplanes=resnet_baseplanes,
-                ngroups=resnet_baseplanes // 2,
-                make_backbone=getattr(resnet, backbone),
-            )
+                    use_obs_space,
+                    baseplanes=resnet_baseplanes,
+                    ngroups=resnet_baseplanes // 2,
+                    make_backbone=getattr(resnet, backbone),
+                )
+
+
 
         if not self.visual_encoder.is_blind:
             self.visual_fc = nn.Sequential(

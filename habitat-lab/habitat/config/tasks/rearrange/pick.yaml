@@ -17,7 +17,7 @@ habitat:
 
         # In radians
         base_angle_noise: 0.4
-        base_noise: 1.5
+        base_noise: 1.0
         force_regenerate: False
 
         constraint_violation_ends_episode: false
@@ -93,7 +93,7 @@ habitat:
 
         pick_success:
             type: "RearrangePickSuccess"
-            ee_resting_success_threshold: 0.05
+            ee_resting_success_threshold: 0.1
 
         measurements:
             - "robot_force"
@@ -117,11 +117,11 @@ habitat:
                 ee_ctrl_lim: 0.015
             base_velocity:
                 type: BaseVelAction
-                lin_speed: 7.5
-                ang_speed: 7.5
+                lin_speed: 4.0
+                ang_speed: 4.0
                 allow_dyn_slide: true
                 allow_back: true
-                end_on_stop: true
+                end_on_stop: false
                 min_abs_lin_speed: 1.0
                 min_abs_ang_speed: 1.0
                 

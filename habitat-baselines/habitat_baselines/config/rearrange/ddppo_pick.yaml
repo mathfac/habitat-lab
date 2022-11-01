@@ -2,23 +2,23 @@ habitat_baselines:
   verbose: False
   base_task_config_path: habitat-lab/habitat/config/tasks/rearrange/pick.yaml
   trainer_name: "ver"
-  simulator_gpu_id: 1
+  simulator_gpu_id: 0
   torch_gpu_id: 0
   video_option: ["disk"]
   tensorboard_dir: "tb"
-  video_dir: "../rearrange_policies/asdfasdf/video_dir2"
+  video_dir: "../rearrange_policies_final/pick/video_dir"
   video_fps: 30
   video_render_top_down: False
   video_render_all_info: True
   video_render_views:
     - "third_rgb_sensor"
   test_episode_count: -1
-  eval_ckpt_path_dir: "../rearrange_policies/asdfasdf/checkpoints/"
-  num_environments: 1
+  eval_ckpt_path_dir: "../rearrange_policies_final/pick/checkpoints/"
+  num_environments: 8
   # Visual sensors to include
   #sensors: ["head_depth_sensor", 'head_rgb_sensor']
   sensors: ["head_depth_sensor"]
-  checkpoint_folder: "../rearrange_policies/asdfasdf/checkpoints"
+  checkpoint_folder: "../rearrange_policies_final/pick/checkpoints"
   num_updates: -1
   total_num_steps: 500_000_000.0
   log_interval: 10
@@ -27,12 +27,12 @@ habitat_baselines:
   # this improves performance considerably
   force_torch_single_threaded: True
   eval_keys_to_include_in_name: ['reward', 'force', 'success']
-  writer_type: 'tb'
+  writer_type: 'wb'
 
   wb:
     project_name: 'habitat2.0'
-    run_name: 'adsffasd'
-    group: 'asdfasd'
+    run_name: 'pick'
+    group: 'pick_final'
   
   rl:
     policy:

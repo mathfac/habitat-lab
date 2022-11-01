@@ -18,15 +18,15 @@ habitat:
         type: RearrangePlaceTask-v0
         count_obj_collisions: true
         should_enforce_target_within_reach: false
-        base_angle_noise: 0.50
-        base_noise: 1.5
+        base_angle_noise: 0.4
+        base_noise: 1.0
         force_regenerate: false
         constraint_violation_ends_episode: false
         constraint_violation_drops_object: true
         reward_measure: place_reward
         success_measure: place_success
         success_reward: 10.0
-        slack_reward: -0.05
+        slack_reward: -0.005
         end_on_success: true
         easy_init: false
         target_start_sensor:
@@ -98,7 +98,7 @@ habitat:
             force_end_pen: 2.0
         place_success:
             type: PlaceSuccess
-            ee_resting_success_threshold: 0.15
+            ee_resting_success_threshold: 0.1
         num_steps:
             type: NumStepsMeasure
         measurements:
@@ -123,11 +123,11 @@ habitat:
                 ee_ctrl_lim: 0.015
             base_velocity:
                 type: BaseVelAction
-                lin_speed: 7.5
-                ang_speed: 7.5
+                lin_speed: 4.0
+                ang_speed: 4.0
                 allow_dyn_slide: true
                 allow_back: true
-                end_on_stop: true
+                end_on_stop: false
                 min_abs_lin_speed: 1.0
                 min_abs_ang_speed: 1.0
         possible_actions:

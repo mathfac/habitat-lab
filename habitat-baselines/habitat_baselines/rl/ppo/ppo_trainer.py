@@ -57,6 +57,9 @@ from habitat_baselines.rl.ddppo.policy import (  # noqa: F401.
 from habitat_baselines.rl.hrl.hierarchical_policy import (  # noqa: F401.
     HierarchicalPolicy,
 )
+from habitat_baselines.rl.thrl.trained_hierarchical_policy import (  # noqa: F401.
+    TrainedHierarchicalPolicy,
+)
 from habitat_baselines.rl.ppo import PPO
 from habitat_baselines.rl.ppo.policy import NetPolicy
 from habitat_baselines.utils.common import (
@@ -255,6 +258,7 @@ class PPOTrainer(BaseRLTrainer):
         action_space = self.envs.action_spaces[0]
         self.policy_action_space = action_space
         self.orig_policy_action_space = self.envs.orig_action_spaces[0]
+
         if is_continuous_action_space(action_space):
             # Assume ALL actions are NOT discrete
             action_shape = (get_num_actions(action_space),)
@@ -740,8 +744,8 @@ class PPOTrainer(BaseRLTrainer):
         count_checkpoints = 0
         prev_time = 0
         if (
-            "use_cosine_decay_lr" in self.config.habitat_baselines.ppo
-            and self.config.habitat_baselines.ppo.use_cosine_decay_lr
+            "use_cosine_decay_lr" in self.config.habitat_baselines.rl.ppo
+            and self.config.habitat_baselines.rl.ppo.use_cosine_decay_lr
         ):  
             def decay_function(step):
                 alpha = self.config.habitat_baselines.rl.ppo.lr_cosine_decay_alpha
@@ -801,7 +805,7 @@ class PPOTrainer(BaseRLTrainer):
                 profiling_wrapper.range_push("train update")
                 if (
                     ppo_cfg.use_linear_clip_decay
-                    or ppo_cfg.use_cosine_clip_decay
+                    or ppo_cfg.use_cosine_decay_lr
                 ):
                     self.agent.clip_param = ppo_cfg.clip_param * (
                         1 - self.percent_done()

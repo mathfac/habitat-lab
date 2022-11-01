@@ -1,18 +1,18 @@
 #!/bin/bash
 ## SLURM scripts have a specific format. 
 
-#SBATCH --job-name=nav_pick_t7
-#SBATCH --output=../rearrange_policies/nav_pick_t7/slurm.out
-#SBATCH --error=../rearrange_policies/nav_pick_t7/slurm.err
-## SBATCH --partition=learnfair
-#SBATCH --partition=scavenge
+#SBATCH --job-name=metacontroler_rearrange
+#SBATCH --output=../metacontroller_rearrange/t3/slurm.out
+#SBATCH --error=../metacontroller_rearrange/t3/slurm.err
+#SBATCH --partition=learnfair
+## SBATCH --partition=scavenge
 #SBATCH --nodes=8
 #SBATCH --gpus-per-node=8
-#SBATCH --ntasks-per-node=4
-#SBATCH --gpus-per-task=2
-#SBATCH --cpus-per-task=18
+#SBATCH --ntasks-per-node=8
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=8
 #SBATCH --open-mode=append
-#SBATCH --time=6:00:00
+#SBATCH --time=01:00:00
 #SBATCH --signal=USR1@60
 
 # setup conda and shell environments
@@ -37,4 +37,7 @@ echo 1
 #srun python -u habitat-baselines/habitat_baselines/run.py --exp-config habitat-baselines/habitat_baselines/config/rearrange/hab/ddppo_tidy_house.yaml --run-type train
 
 
-srun python -u habitat-baselines/habitat_baselines/run.py --exp-config habitat-baselines/habitat_baselines/config/rearrange/hab/ddppo_nav_pick.yaml --run-type train
+#srun python -u habitat-baselines/habitat_baselines/run.py --exp-config habitat-baselines/habitat_baselines/config/rearrange/hab/ddppo_nav_pick.yaml --run-type train
+
+
+srun python -u habitat-baselines/habitat_baselines/run.py --exp-config habitat-baselines/habitat_baselines/config/rearrange/tp_srl_rearrange.yaml --run-type train

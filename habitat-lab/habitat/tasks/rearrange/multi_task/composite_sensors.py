@@ -228,6 +228,7 @@ class MoveObjectsReward(RearrangeReward):
         self._cur_rearrange_step = 0
         self._prev_holding_obj = False
         self._did_give_pick_reward = {}
+        self._did_give_rearrange_reward = {}
         task.measurements.check_measure_dependencies(
             self.uuid,
             [
@@ -242,9 +243,7 @@ class MoveObjectsReward(RearrangeReward):
             EndEffectorToObjectDistance.cls_uuid
         ].get_metric()
         self._prev_measures = (to_obj, to_goal)
-        self._steps_without_holding = 0
         self._single_rearrange_success = False
-        self._already_picked_once = False
 
         self.update_metric(
             *args,
@@ -297,43 +296,18 @@ class MoveObjectsReward(RearrangeReward):
 
         if (
             not is_holding_obj
-            and self._steps_without_holding < 15
             and to_goal[targ_obj_idx] < self._config.success_dist
+            and self._cur_rearrange_step not in self._did_give_rearrange_reward
         ):
-            self._cur_rearrange_step += 1
-            self._single_rearrange_success = True
+            self._did_give_rearrange_reward[self._cur_rearrange_step] = True
             self._metric += self._config.single_rearrange_reward
-
-        if (
-            self._steps_without_holding == 15
-            and self._already_picked_once
-            and not self._single_rearrange_success
-        ):
             self._cur_rearrange_step += 1
-            self._single_rearrange_success = False
 
         self._cur_rearrange_step = min(self._cur_rearrange_step, num_targs - 1)
-
-        # if (
-        #    dist < self._config.success_dist
-        #    and not is_holding_obj
-        #    and self._cur_rearrange_step < num_targs
-        # ):
-        #    self._metric += self._config.single_rearrange_reward
-        #    self._cur_rearrange_step += 1
-        #    self._cur_rearrange_step = min(
-        #        self._cur_rearrange_step, num_targs - 1
-        #    )
-
         self._metric += self._config.dist_reward * dist_diff
+
         self._prev_measures = (to_obj, to_goal)
         self._prev_holding_obj = is_holding_obj
-        self._already_picked_once = is_holding_obj or self._already_picked_once
-        if is_holding_obj:
-            self._steps_without_holding = 0
-            self.single_rearrange_success = True
-        if not is_holding_obj:
-            self._steps_without_holding += 1
 
 
 @registry.register_measure

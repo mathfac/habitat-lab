@@ -61,6 +61,11 @@ class HierarchicalPolicy(Policy):
                 self._num_envs,
                 full_config,
             )
+            try:
+                for param in skill_policy.parameters():
+                    param.requires_grad = False
+            except AttributeError:
+                pass
             self._skills[i] = skill_policy
             self._name_to_idx[skill_id] = i
 
@@ -86,6 +91,9 @@ class HierarchicalPolicy(Policy):
     def eval(self):
         pass
 
+    def forward(self, *x):
+        raise NotImplementedError
+        
     @property
     def num_recurrent_layers(self):
         return self._skills[0].num_recurrent_layers

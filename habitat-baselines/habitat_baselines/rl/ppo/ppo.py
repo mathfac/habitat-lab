@@ -127,6 +127,9 @@ class PPO(nn.Module):
             if not name.startswith("actor_critic.")
         ]
 
+    def parameters(self):
+        return self.actor_critic.parameters()
+        
     def forward(self, *x):
         raise NotImplementedError
 

@@ -5,12 +5,12 @@ habitat_baselines:
     task:
       task_spec_base_path: /habitat-lab/habitat/config/tasks/rearrange/pddl/rearrange_easy.yaml
   ENV_NAME: "RearrangeRLEnv"
-  trainer_name: "ver"
+  trainer_name: "ddppo"
   simulator_gpu_id: 0
   torch_gpu_id: 0
   video_option: ["disk"]
   tensorboard_dir: "tb"
-  video_dir: "../rearrange/easy_test_2/video_dir"
+  video_dir: "../metacontroller_rearrange/t3/video_dir"
   video_fps: 30
   video_render_top_down: False
   video_render_all_info: True
@@ -18,15 +18,15 @@ habitat_baselines:
     - "third_rgb_sensor"
   sensors: ["head_depth_sensor"]
   test_episode_count: -1
-  eval_ckpt_path_dir: "../rearrange/easy_test_2/checkpoints"
+  eval_ckpt_path_dir: "../metacontroller_rearrange/t3/checkpoints"
   num_environments: 1
   writer_type: 'wb'
-  checkpoint_folder: "../rearrange/easy_test_2/checkpoints"
+  checkpoint_folder: "../metacontroller_rearrange/t3/checkpoints"
   num_updates: -1
-  total_num_steps: 100_000_000.0
+  total_num_steps: 25_000_000.0
   test_episode_count: 10
   log_interval: 10
-  num_checkpoints: 20
+  num_checkpoints: 25
   force_torch_single_threaded: True
   eval_keys_to_include_in_name: ['reward', 'force', 'composite_success']
   eval:
@@ -37,12 +37,13 @@ habitat_baselines:
 
   wb:
     project_name: 'rearrangement_2.0'
-    run_name: 'test_1'
-    group: 'rearrenge_easy'
+    run_name: 'train_1'
+    group: 'train_rearrenge_easy'
 
   rl:
     policy:
-        name: "HierarchicalPolicy"
+        use_mae: False
+        name: "TrainedHierarchicalPolicy"
         action_distribution_type: "gaussian"
         action_dist:
           use_log_std: True
@@ -107,10 +108,11 @@ habitat_baselines:
             action_distribution_type: "gaussian"
             at_resting_threshold: 0.2
             obs_skill_inputs: ["obj_start_sensor"]
-            load_ckpt_file: "../rearrange_policies/pick/checkpoints/ckpt.43.pth"
-            max_skill_steps: 200
+            #load_ckpt_file: "../rearrange_policies/pick/checkpoints/ckpt.43.pth"
+            load_ckpt_file: "../rearrange_policies_final/pick/checkpoints/latest.pth"
+            max_skill_steps: 300
             force_end_on_timeout: True
-            order_keys: true
+            #order_keys: true
 
           nn_place:
             skill_name: "PlaceSkillPolicy"
@@ -118,10 +120,11 @@ habitat_baselines:
             action_distribution_type: "gaussian"
             at_resting_threshold: 0.2
             obs_skill_inputs: ["obj_goal_sensor"]
-            load_ckpt_file: "../rearrange_policies/place/checkpoints/ckpt.13.pth"
-            max_skill_steps: 200
+            #load_ckpt_file: "../rearrange_policies/place/checkpoints/ckpt.13.pth"
+            load_ckpt_file: "../rearrange_policies_final/place/checkpoints/latest.pth"
+            max_skill_steps: 300
             force_end_on_timeout: True
-            order_keys: true
+            #order_keys: true
 
           nn_nav:
             skill_name: "NavSkillPolicy"
@@ -132,7 +135,7 @@ habitat_baselines:
             lin_speed_stop: 0.067
             ang_speed_stop: 0.067
             load_ckpt_file: "../rearrange_policies/nav/checkpoints/ckpt.49.pth"
-            max_skill_steps: 300
+            max_skill_steps: 600
             force_end_on_timeout: False
             order_keys: true
 
@@ -164,7 +167,7 @@ habitat_baselines:
       # ppo params
       clip_param: 0.2
       ppo_epoch: 2
-      num_mini_batch: 2
+      num_mini_batch: 1
       value_loss_coef: 0.5
       entropy_coef: 0.0001
       lr: 2.5e-4
@@ -175,8 +178,10 @@ habitat_baselines:
       gamma: 0.99
       tau: 0.95
       use_linear_clip_decay: False
-      use_linear_lr_decay: False
+      use_linear_lr_decay: True
       reward_window_size: 50
+      use_cosine_decay_lr: False
+      lr_cosine_decay_alpha: 1.0e-5
 
       use_normalized_advantage: False
 

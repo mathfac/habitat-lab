@@ -146,7 +146,7 @@ class Benchmark:
         return avg_metrics
 
     def local_evaluate(
-        self, agent: "Agent", num_episodes: Optional[int] = None
+        self, agent: "Agent", num_episodes: Optional[int] = 20
     ) -> Dict[str, float]:
         if num_episodes is None:
             num_episodes = len(self._env.episodes)

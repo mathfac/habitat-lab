@@ -18,6 +18,8 @@ from habitat.tasks.rearrange.rearrange_sensors import (
     EndEffectorToObjectDistance,
     ObjectToGoalDistance,
     RearrangeReward,
+    BaseToObjectDistance,
+    BaseToGoalDistance
 )
 
 

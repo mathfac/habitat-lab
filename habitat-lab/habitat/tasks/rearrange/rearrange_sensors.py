@@ -76,6 +76,29 @@ class TargetCurrentSensor(UsesRobotInterface, MultiObjSensor):
 
 
 @registry.register_sensor
+class FrozenTargetStartSensor(UsesRobotInterface, MultiObjSensor):
+    """
+    Initial relative position from end effector to target object,
+    it's not updated at every step as the obj_start_sensor is.
+    """
+
+    cls_uuid: str = "frozen_obj_start_sensor"
+
+    def get_observation(self, *args, observations, episode, **kwargs):
+        self._sim: RearrangeSim
+        
+        if not hasattr(self, 'current_episode_id'):
+            self.current_episode_id = None
+
+        if self.current_episode_id != episode.episode_id:
+            self.global_T = self._sim.get_robot_data(self.robot_id).robot.ee_transform
+            self.current_episode_id = episode.episode_id
+
+        T_inv = self.global_T.inverted()
+        pos = self._sim.get_target_objs_start()
+        return batch_transform_point(pos, T_inv, np.float32).reshape(-1)
+
+@registry.register_sensor
 class TargetStartSensor(UsesRobotInterface, MultiObjSensor):
     """
     Relative position from end effector to target object
@@ -511,9 +534,34 @@ class ObjAtGoal(Measure):
         }
 
 @registry.register_measure
+class IsHolding(Measure):
+    cls_uuid: str = "is_holding_measure"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        self._sim = sim
+        self._config = config
+        super().__init__(**kwargs)
+
+    def reset_metric(self, *args, episode, **kwargs):
+        self.update_metric(*args, episode=episode, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return IsHolding.cls_uuid
+
+    def update_metric(self, *args, episode, **kwargs):
+        idxs, _ = self._sim.get_targets()
+        targ_obj_idx = idxs[0]
+        abs_targ_obj_idx = self._sim.scene_obj_ids[targ_obj_idx]
+        targ_obj_idx = str(targ_obj_idx)
+        is_holding_obj = self._sim.grasp_mgr.snap_idx == abs_targ_obj_idx
+        self._metric = is_holding_obj
+
+
+@registry.register_measure
 class BaseToObjectDistance(UsesRobotInterface, Measure):
     """
-    Gets the distance between the end-effector and all current target object COMs.
+    Gets the distance between the base and the current target object in geodesic.
     """
 
     cls_uuid: str = "base_to_object_distance"
@@ -521,6 +569,7 @@ class BaseToObjectDistance(UsesRobotInterface, Measure):
     def __init__(self, sim, config, *args, **kwargs):
         self._sim = sim
         self._config = config
+        self._prev_dist = {}
         super().__init__(**kwargs)
 
     @staticmethod
@@ -528,21 +577,76 @@ class BaseToObjectDistance(UsesRobotInterface, Measure):
         return BaseToObjectDistance.cls_uuid
 
     def reset_metric(self, *args, episode, **kwargs):
+        self._prev_dist = self._get_cur_geo_dist()
         self.update_metric(*args, episode=episode, **kwargs)
-
-    def update_metric(self, *args, episode, **kwargs):
-
+    
+    def _get_cur_geo_dist(self):
+        # Get agent position
         current_pos = self._sim.robot.base_pos
         current_pos = self._sim.safe_snap_point(current_pos)
 
+        # Get object targets
         idxs, _ = self._sim.get_targets()
         scene_pos = self._sim.get_scene_pos()
         target_pos = scene_pos[idxs]
 
-        self._metric = {}
+        # Build metric
+        distances = {}
         for idx, pos in zip(idxs, target_pos):
             dist = self._sim.geodesic_distance(current_pos, pos)
-            self._metric[str(idx)] = dist
+            if dist == np.inf:
+                dist = self._prev_dist[str(idx)] if str(idx) in self._prev_dist else None
+            if dist is None:
+                dist = 30
+            distances[str(idx)] = dist
+        return distances
+
+    def update_metric(self, *args, episode, **kwargs):
+        self._metric = self._get_cur_geo_dist()
+        
+@registry.register_measure
+class BaseToGoalDistance(UsesRobotInterface, Measure):
+    """
+    Gets the distance between the base and the current target object in geodesic.
+    """
+
+    cls_uuid: str = "base_to_goal_distance"
+
+    def __init__(self, sim, config, *args, **kwargs):
+        self._sim = sim
+        self._config = config
+        self._prev_dist = {}
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return BaseToGoalDistance.cls_uuid
+
+    def reset_metric(self, *args, episode, **kwargs):
+        self._prev_dist = self._get_cur_geo_dist()
+        self.update_metric(*args, episode=episode, **kwargs)
+    
+    def _get_cur_geo_dist(self):
+        # Get agent position
+        current_pos = self._sim.robot.base_pos
+        current_pos = self._sim.safe_snap_point(current_pos)
+
+        # Get goal positions
+        idxs, goal_pos = self._sim.get_targets()
+
+        # Build metric
+        distances = {}
+        for idx, pos in zip(idxs, goal_pos):
+            dist = self._sim.geodesic_distance(current_pos, pos)
+            if dist == np.inf:
+                dist = self._prev_dist[str(idx)] if str(idx) in self._prev_dist else None
+            if dist is None:
+                dist = 30
+            distances[str(idx)] = dist
+        return distances
+
+    def update_metric(self, *args, episode, **kwargs):
+        self._metric = self._get_cur_geo_dist()
 
 @registry.register_measure
 class EndEffectorToGoalDistance(UsesRobotInterface, Measure):

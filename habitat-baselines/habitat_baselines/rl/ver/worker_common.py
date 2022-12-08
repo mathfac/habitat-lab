@@ -33,9 +33,9 @@ class WorkerQueues:
         self.environments = [
             BatchedQueue(8 * 1024 * 1024) for _ in range(num_environments)
         ]
-        self.inference = BatchedQueue(1024 * 1024 * num_environments)
-        self.report = BatchedQueue(1024 * 1024 * num_environments)
-        self.preemption_decider = BatchedQueue(1024 * 1024 * num_environments)
+        self.inference = BatchedQueue(4 * 1024 * 1024 * num_environments)
+        self.report = BatchedQueue(4 * 1024 * 1024 * num_environments)
+        self.preemption_decider = BatchedQueue(4 * 1024 * 1024 * num_environments)
 
 
 @attr.s(auto_attribs=True, init=False, slots=True)

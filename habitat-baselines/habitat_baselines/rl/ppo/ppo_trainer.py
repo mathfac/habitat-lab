@@ -766,22 +766,6 @@ class PPOTrainer(BaseRLTrainer):
 
         count_checkpoints = 0
         prev_time = 0
-        if (
-            "use_cosine_decay_lr" in self.config.habitat_baselines.rl.ppo
-            and self.config.habitat_baselines.rl.ppo.use_cosine_decay_lr
-        ):  
-            def decay_function(step):
-                alpha = self.config.habitat_baselines.rl.ppo.lr_cosine_decay_alpha
-                decay_steps = self.config.TOTAL_NUM_STEPS
-                step = min(step, decay_steps)
-                cosine_decay = 0.5 * (1 + cos(pi * step / decay_steps))
-                decayed = (1 - alpha) * cosine_decay + alpha
-
-                return decayed
-
-        else:
-            def decay_function(x):
-                return 1 - self.percent_done()
 
         lr_scheduler = LambdaLR(
             optimizer=self.agent.optimizer,
@@ -831,7 +815,6 @@ class PPOTrainer(BaseRLTrainer):
                 profiling_wrapper.range_push("train update")
                 if (
                     ppo_cfg.use_linear_clip_decay
-                    or ppo_cfg.use_cosine_decay_lr
                 ):
                     self.agent.clip_param = ppo_cfg.clip_param * (
                         1 - self.percent_done()

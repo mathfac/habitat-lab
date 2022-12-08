@@ -1,3 +1,7 @@
+# Copyright (c) Meta Platforms, Inc. and its affiliates.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 import itertools
 import multiprocessing
 import runpy
@@ -43,8 +47,7 @@ def run_main_subproc(args):
     )
     or not osp.exists(
         "data/scene_datasets/habitat-test-scenes/van-gogh-room.glb"
-    )
-    or not osp.exists("data/scene_datasets/coda/coda.glb"),
+    ),
     reason="Requires the habitat-test-scenes",
 )
 @pytest.mark.parametrize(
@@ -63,6 +66,7 @@ def test_example_modules(args):
         (
             "examples/interactive_play.py",
             "--no-render",
+            "--disable-inverse-kinematics",
         ),
         ("examples/tutorials/nb_python/Habitat2_Quickstart.py",),
         ("examples/tutorials/nb_python/habitat2_gym_tutorial.py",),
@@ -73,7 +77,9 @@ def test_rearrange_example_modules(args):
 
 
 @pytest.mark.skipif(
-    not osp.exists("habitat-lab/habitat/config/tasks/franka_point.yaml"),
+    not osp.exists(
+        "habitat-lab/habitat/config/benchmark/nav/pointnav/pointnav_franka.yaml"
+    ),
     reason="Requires the franka point config",
 )
 @pytest.mark.parametrize(
@@ -90,7 +96,9 @@ def test_static_franka_example(args):
 
 
 @pytest.mark.skipif(
-    not osp.exists("habitat-lab/habitat/config/tasks/franka_point.yaml")
+    not osp.exists(
+        "habitat-lab/habitat/config/benchmark/nav/pointnav/pointnav_franka.yaml"
+    )
     or not osp.exists("data/test_assets/objects/nested_box.glb")
     or not osp.exists(
         "data/test_assets/objects/nested_box.object_config.json"

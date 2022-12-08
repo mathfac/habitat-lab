@@ -36,13 +36,10 @@ from habitat_baselines.rl.models.rnn_state_encoder import (
 from habitat_baselines.rl.ppo import Net, NetPolicy
 from habitat_baselines.utils.common import get_num_actions
 
-<<<<<<< HEAD
-=======
 if TYPE_CHECKING:
     from omegaconf import DictConfig
 
 
->>>>>>> upstream/main
 @baseline_registry.register_policy
 class PointNavResNetPolicy(NetPolicy):
     def __init__(
@@ -83,7 +80,6 @@ class PointNavResNetPolicy(NetPolicy):
                 fuse_keys=fuse_keys,
                 force_blind_policy=force_blind_policy,
                 discrete_actions=discrete_actions,
-                policy_config=policy_config
             ),
             action_space=action_space,
             policy_config=policy_config,
@@ -98,13 +94,6 @@ class PointNavResNetPolicy(NetPolicy):
         action_space,
         **kwargs,
     ):
-<<<<<<< HEAD
-        if not config.habitat_baselines.rl.policy.get("order_keys", False):
-            fuse_keys = config.habitat.gym.obs_keys
-        else:
-            fuse_keys = None
-
-=======
         # Exclude cameras for rendering from the observation space.
         ignore_names: List[str] = []
         for agent_config in config.habitat.simulator.agents.values():
@@ -122,7 +111,6 @@ class PointNavResNetPolicy(NetPolicy):
                 )
             )
         )
->>>>>>> upstream/main
         return cls(
             observation_space=filtered_obs,
             action_space=action_space,
@@ -133,7 +121,7 @@ class PointNavResNetPolicy(NetPolicy):
             force_blind_policy=config.habitat_baselines.force_blind_policy,
             policy_config=config.habitat_baselines.rl.policy,
             aux_loss_config=config.habitat_baselines.rl.auxiliary_losses,
-            fuse_keys=fuse_keys,
+            fuse_keys=None,
         )
 
 
@@ -270,7 +258,6 @@ class PointNavResNetNet(Net):
         fuse_keys: Optional[List[str]],
         force_blind_policy: bool = False,
         discrete_actions: bool = True,
-        policy_config=None,
     ):
         super().__init__()
         self.prev_action_embedding: nn.Module
@@ -291,7 +278,7 @@ class PointNavResNetNet(Net):
         # Only fuse the 1D state inputs. Other inputs are processed by the
         # visual encoder
         if fuse_keys is None:
-            fuse_keys = sorted(observation_space.spaces.keys())
+            fuse_keys = observation_space.spaces.keys()
             # removing keys that correspond to goal sensors
             goal_sensor_keys = {
                 IntegratedPointGoalGPSAndCompassSensor.cls_uuid,
@@ -419,26 +406,12 @@ class PointNavResNetNet(Net):
                 }
             )
 
-        try:
-            if policy_config.use_mae:
-                from habitat_baselines.rl.ddppo.policy.multimae import MMAE
-                self.visual_encoder = MMAE(use_obs_space)
-            else:
-                self.visual_encoder = ResNetEncoder(
-                    use_obs_space,
-                    baseplanes=resnet_baseplanes,
-                    ngroups=resnet_baseplanes // 2,
-                    make_backbone=getattr(resnet, backbone),
-                )
-        except:
-            self.visual_encoder = ResNetEncoder(
-                    use_obs_space,
-                    baseplanes=resnet_baseplanes,
-                    ngroups=resnet_baseplanes // 2,
-                    make_backbone=getattr(resnet, backbone),
-                )
-
-
+        self.visual_encoder = ResNetEncoder(
+            use_obs_space,
+            baseplanes=resnet_baseplanes,
+            ngroups=resnet_baseplanes // 2,
+            make_backbone=getattr(resnet, backbone),
+        )
 
         if not self.visual_encoder.is_blind:
             self.visual_fc = nn.Sequential(
@@ -615,4 +588,5 @@ class PointNavResNetNet(Net):
             out, rnn_hidden_states, masks, rnn_build_seq_info
         )
         aux_loss_state["rnn_output"] = out
+
         return out, rnn_hidden_states, aux_loss_state

@@ -7,49 +7,29 @@ defaults:
 
 habitat_baselines:
   verbose: False
-<<<<<<< HEAD:habitat-baselines/habitat_baselines/config/rearrange/ddppo_nav_to_obj.yaml
-  trainer_name: "ver"
-  simulator_gpu_id: 0
-=======
   trainer_name: "ddppo"
->>>>>>> upstream/main:habitat-baselines/habitat_baselines/config/rearrange/rl_rearrange_easy.yaml
   torch_gpu_id: 0
   tensorboard_dir: "tb"
-  video_dir: "../rearrange_policies/nav/video_dir"
+  video_dir: "video_dir"
   video_fps: 30
   video_render_views:
     - "third_rgb_sensor"
   test_episode_count: -1
-<<<<<<< HEAD:habitat-baselines/habitat_baselines/config/rearrange/ddppo_nav_to_obj.yaml
-  eval_ckpt_path_dir: "../rearrange_policies/nav/checkpoints"
-  num_environments: 4
-  # Visual sensors to include
-  sensors: ["head_depth_sensor"]
-  #, 'head_rgb_sensor']
-  checkpoint_folder: "../rearrange_policies/nav/checkpoints"
-=======
   eval_ckpt_path_dir: "data/new_checkpoints"
   num_environments: 32
   writer_type: 'tb'
   checkpoint_folder: "data/new_checkpoints"
->>>>>>> upstream/main:habitat-baselines/habitat_baselines/config/rearrange/rl_rearrange_easy.yaml
   num_updates: -1
-  total_num_steps: 500_000_000.0
+  total_num_steps: 1.0e8
   log_interval: 10
-  num_checkpoints: 50
+  num_checkpoints: 20
   # Force PyTorch to be single threaded as
   # this improves performance considerably
   force_torch_single_threaded: True
   eval_keys_to_include_in_name: ['reward', 'force', 'success']
-  writer_type: 'wb'
 
   eval:
     video_option: ["disk"]
-
-  wb:
-    project_name: 'habitat2.0'
-    run_name: 'tt'
-    group: 'tt'
 
   rl:
     policy:
@@ -60,12 +40,12 @@ habitat_baselines:
     ppo:
       # ppo params
       clip_param: 0.2
-      ppo_epoch: 3
+      ppo_epoch: 2
       num_mini_batch: 2
       value_loss_coef: 0.5
       entropy_coef: 0.0001
-      lr: 2.0e-4
-      eps: 1.0e-5
+      lr: 2.5e-4
+      eps: 1e-5
       max_grad_norm: 0.2
       num_steps: 128
       use_gae: True
@@ -74,8 +54,6 @@ habitat_baselines:
       use_linear_clip_decay: False
       use_linear_lr_decay: False
       reward_window_size: 50
-      use_cosine_decay_lr: true
-      lr_cosine_decay_alpha: 1.0e-5
 
       use_normalized_advantage: False
 
@@ -102,6 +80,6 @@ habitat_baselines:
       reset_critic: True
 
       # Model parameters
-      backbone: resnet50
-      rnn_type: GRU
-      num_recurrent_layers: 3
+      backbone: resnet18
+      rnn_type: LSTM
+      num_recurrent_layers: 2

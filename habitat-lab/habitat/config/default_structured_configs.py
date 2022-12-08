@@ -714,16 +714,10 @@ class TaskConfig(HabitatBaseConfig):
     # Forced to regenerate the starts even if they are already cached
     force_regenerate: bool = False
     # Saves the generated starts to a cache if they are not already generated
-<<<<<<< HEAD
-    should_save_to_cache = False
-    must_look_at_targ = True
-    object_in_hand_sample_prob = 0.167
-=======
     should_save_to_cache: bool = False
     must_look_at_targ: bool = True
     object_in_hand_sample_prob: float = 0.167
     min_start_distance: float = 3.0
->>>>>>> upstream/main
     gfx_replay_dir = "data/replays"
     render_target: bool = True
     # Spawn parameters

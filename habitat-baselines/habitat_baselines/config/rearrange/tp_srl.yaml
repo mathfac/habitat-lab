@@ -1,32 +1,3 @@
-<<<<<<< HEAD
-habitat_baselines:
-  verbose: False
-  base_task_config_path: habitat-lab/habitat/config/tasks/rearrange/tidy_house.yaml
-  TASK_CONFIG:
-    TASK:
-      TASK_SPEC_BASE_PATH: /habitat-lab/habitat/config/tasks/rearrange/pddl/tidy_house.yaml
-  ENV_NAME: "RearrangeRLEnv"
-  trainer_name: "ver"
-  simulator_gpu_id: 0
-  torch_gpu_id: 0
-  video_option: ["disk"]
-  tensorboard_dir: "tb"
-  video_dir: "../tidy_house/test/video_dir"
-  video_fps: 30
-  video_render_top_down: False
-  video_render_all_info: True
-  video_render_views:
-    - "third_rgb_sensor"
-  sensors: ["head_depth_sensor"]
-  test_episode_count: -1
-  eval_ckpt_path_dir: "../tidy_house/test/checkpoints"
-  num_environments: 1
-  writer_type: 'wb'
-  checkpoint_folder: "../tidy_house/test/checkpoints"
-  num_updates: -1
-  total_num_steps: 100_000_000.0
-  test_episode_count: 10
-=======
 # @package _global_
 
 defaults:
@@ -53,151 +24,19 @@ habitat_baselines:
   checkpoint_folder: "data/new_checkpoints"
   num_updates: -1
   total_num_steps: 1.0e8
->>>>>>> upstream/main
   log_interval: 10
   num_checkpoints: 20
   force_torch_single_threaded: True
   eval_keys_to_include_in_name: ['reward', 'force', 'composite_success']
-<<<<<<< HEAD
-  eval:
-    use_ckpt_config: False
-    should_load_ckpt: False
-    SPLIT: 'val'
-
- 
-  wb:
-    project_name: 'rearrangement_2.0'
-    run_name: 'test_0'
-    group: 'tidy_house'
-=======
   load_resume_state_config: False
   eval:
     use_ckpt_config: False
     should_load_ckpt: False
     video_option: ["disk"]
->>>>>>> upstream/main
 
   rl:
     policy:
         name: "HierarchicalPolicy"
-<<<<<<< HEAD
-        action_distribution_type: "gaussian"
-        action_dist:
-          use_log_std: True
-          clamp_std: True
-          std_init: -1.0
-          use_std_param: True
-        high_level_policy:
-          name: "GtHighLevelPolicy"
-        obs_transforms:
-          enabled_transforms: ['AddVirtualKeys']
-          add_virtual_keys:
-            "nav_to_skill": 8
-            "object_to_agent_gps_compass": 2
-        defined_skills:
-          NN_OPEN_CAB:
-            skill_name: "ArtObjSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.15
-            obs_skill_inputs: []
-            load_ckpt_file: "data/models/open_cab.pth"
-            max_skill_steps: 200
-            start_zone_radius: 0.3
-            force_end_on_timeout: True
-
-          NN_OPEN_FRIDGE:
-            skill_name: "ArtObjSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.15
-            obs_skill_inputs: []
-            load_ckpt_file: "data/models/open_fridge.pth"
-            max_skill_steps: 200
-            start_zone_radius: 0.3
-            force_end_on_timeout: True
-
-          NN_CLOSE_CAB:
-            skill_name: "ArtObjSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.2
-            obs_skill_inputs: ["obj_start_sensor"]
-            load_ckpt_file: "data/models/close_cab.pth"
-            max_skill_steps: 200
-            start_zone_radius: 0.3
-            force_end_on_timeout: True
-
-          NN_CLOSE_FRIDGE:
-            skill_name: "ArtObjSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.2
-            obs_skill_inputs: ["obj_start_sensor"]
-            load_ckpt_file: "data/models/close_fridge.pth"
-            max_skill_steps: 200
-            start_zone_radius: 0.3
-            force_end_on_timeout: True
-
-          nn_pick:
-            skill_name: "PickSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.15
-            obs_skill_inputs: ["obj_start_sensor"]
-            load_ckpt_file: "../rearrange_policies/pick/checkpoints/ckpt.42.pth"
-            max_skill_steps: 200
-            force_end_on_timeout: True
-            order_keys: true
-
-          nn_place:
-            skill_name: "PlaceSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            at_resting_threshold: 0.15
-            obs_skill_inputs: ["obj_goal_sensor"]
-            load_ckpt_file: "../rearrange_policies/place/checkpoints/ckpt.13.pth"
-            max_skill_steps: 200
-            force_end_on_timeout: True
-            order_keys: true
-
-          nn_nav:
-            skill_name: "NavSkillPolicy"
-            name: "PointNavResNetPolicy"
-            action_distribution_type: "gaussian"
-            obs_skill_inputs: ["object_to_agent_gps_compass"]
-            obs_skill_input_dim: 2
-            lin_speed_stop: 0.067
-            ang_speed_stop: 0.067
-            load_ckpt_file: "../rearrange_policies/nav/checkpoints/ckpt.49.pth"
-            max_skill_steps: 300
-            force_end_on_timeout: False
-            order_keys: true
-
-          wait_skill:
-            skill_name: "WaitSkillPolicy"
-            max_skill_steps: -1.0
-            force_end_on_timeout: False
-
-          reset_arm_skill:
-            skill_name: "ResetArmSkill"
-            max_skill_steps: 50
-            reset_joint_state: [-4.5003259e-01, -1.0799699e00, 9.9526465e-02, 9.3869519e-01, -7.8854430e-04, 1.5702540e00, 4.6168058e-03]
-            force_end_on_timeout: False
-
-        use_skills:
-          # Uncomment if you are also using these skills
-          # open_cab: "NN_OPEN_CAB"
-          # open_fridge: "NN_OPEN_FRIDGE"
-          # close_cab: "NN_OPEN_CAB"
-          # close_fridge: "NN_OPEN_FRIDGE"
-          pick: "nn_pick"
-          place: "nn_place"
-          nav: "nn_nav"
-          nav_to_receptacle: "nn_nav"
-          wait: "wait_skill"
-          reset_arm: "reset_arm_skill"
-=======
         obs_transforms:
           add_virtual_keys:
             virtual_keys:
@@ -306,7 +145,6 @@ habitat_baselines:
             nav_to_receptacle: "nn_nav"
             wait: "wait_skill"
             reset_arm: "reset_arm_skill"
->>>>>>> upstream/main
 
     ppo:
       # ppo params
@@ -351,14 +189,6 @@ habitat_baselines:
       reset_critic: False
 
       # Model parameters
-<<<<<<< HEAD
-      backbone: resnet50
-      rnn_type: GRU
-      num_recurrent_layers: 3
-
-
-=======
       backbone: resnet18
       rnn_type: LSTM
       num_recurrent_layers: 2
->>>>>>> upstream/main

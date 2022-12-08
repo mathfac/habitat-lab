@@ -1,28 +1,19 @@
 #!/usr/bin/env python3
 
-# Copyright (c) Meta Platforms, Inc. and its affiliates.
+# Copyright (c) Facebook, Inc. and its affiliates.
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import inspect
-import os.path as osp
-from typing import Optional
+import warnings
+from typing import List, Optional, Union
 
-from omegaconf import DictConfig
+import numpy as np
 
-from habitat.config.default import get_config as _habitat_get_config
-from habitat.config.default_structured_configs import register_hydra_plugin
-from habitat_baselines.config.default_structured_configs import (
-    HabitatBaselinesConfigPlugin,
-)
+from habitat import get_config as get_task_config
+from habitat.config import Config as CN
 
-_BASELINES_CFG_DIR = osp.dirname(inspect.getabsfile(inspect.currentframe()))
-# Habitat baselines config directory inside the installed package.
-# Used to access default predefined configs.
-# This is equivalent to doing osp.dirname(osp.abspath(__file__))
 DEFAULT_CONFIG_DIR = "habitat-lab/habitat/config/"
 CONFIG_FILE_SEPARATOR = ","
-<<<<<<< HEAD
 # -----------------------------------------------------------------------------
 # EXPERIMENT CONFIG
 # -----------------------------------------------------------------------------
@@ -124,8 +115,6 @@ _C.habitat_baselines.rl.policy.name = "PointNavResNetPolicy"
 _C.habitat_baselines.rl.policy.action_distribution_type = (
     "categorical"  # or 'gaussian'
 )
-_C.habitat_baselines.rl.policy.order_keys = False
-_C.habitat_baselines.rl.policy.use_mae = False
 # If the list is empty, all keys will be included.
 # For gaussian action distribution:
 _C.habitat_baselines.rl.policy.action_dist = CN()
@@ -328,24 +317,61 @@ _C.habitat_baselines.profiling.num_steps_to_capture = -1
 
 
 _C.habitat_baselines.register_renamed_key
-=======
->>>>>>> upstream/main
 
 
 def get_config(
-    config_path: str,
-    overrides: Optional[list] = None,
-    configs_dir: str = _BASELINES_CFG_DIR,
-) -> DictConfig:
-    """
-    Returns habitat_baselines config object composed of configs from yaml file (config_path) and overrides.
+    config_paths: Optional[Union[List[str], str]] = None,
+    opts: Optional[list] = None,
+) -> CN:
+    r"""Create a unified config with default values overwritten by values from
+    :ref:`config_paths` and overwritten by options from :ref:`opts`.
 
-    :param config_path: path to the yaml config file.
-    :param overrides: list of config overrides. For example, :py:`overrides=["habitat_baselines.trainer_name=ddppo"]`.
-    :param configs_dir: path to the config files root directory (defaults to :ref:`_BASELINES_CFG_DIR`).
-    :return: composed config object.
+    Args:
+        config_paths: List of config paths or string that contains comma
+        separated list of config paths.
+        opts: Config options (keys, values) in a list (e.g., passed from
+        command line into the config. For example, ``opts = ['FOO.BAR',
+        0.5]``. Argument can be used for parameter sweeping or quick tests.
     """
-    register_hydra_plugin(HabitatBaselinesConfigPlugin)
-    cfg = _habitat_get_config(config_path, overrides, configs_dir)
+    config = _C.clone()
+    baselines_config = config.habitat_baselines
+    if config_paths:
+        if isinstance(config_paths, str):
+            if CONFIG_FILE_SEPARATOR in config_paths:
+                config_paths = config_paths.split(CONFIG_FILE_SEPARATOR)
+            else:
+                config_paths = [config_paths]
 
-    return cfg
+        for config_path in config_paths:
+            config.merge_from_file(config_path)
+
+    if opts:
+        for k, v in zip(opts[0::2], opts[1::2]):
+            if k == "base_task_config_path":
+                baselines_config.base_task_config_path = v
+
+    config.merge_from_other_cfg(
+        get_task_config(baselines_config.base_task_config_path)
+    )
+
+    # In case the config specifies overrides for the habitat config, we
+    # re-merge the files here
+    if config_paths:
+        for config_path in config_paths:
+            config.merge_from_file(config_path)
+
+    if opts:
+        baselines_config.cmd_trailing_opts += opts
+        config.merge_from_list(baselines_config.cmd_trailing_opts)
+
+    if baselines_config.num_processes != -1:
+        warnings.warn(
+            "num_processes is deprecated and will be removed in a future "
+            "version. Use num_environments instead. Overwriting "
+            "num_environments with num_processes for backwards compatibility."
+        )
+
+        baselines_config.num_environments = baselines_config.num_processes
+
+    config.freeze()
+    return config

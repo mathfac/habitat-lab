@@ -26,6 +26,9 @@ var/
 .installed.cfg
 *.egg
 
+# Hydra
+outputs/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -99,3 +102,4 @@ data
 # outputs from other libraries
 /sandbox
 /plots/outputs
+/wandb/

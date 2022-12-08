@@ -1,3 +1,7 @@
+# Copyright (c) Meta Platforms, Inc. and its affiliates.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 import torch
 
 from habitat.tasks.rearrange.rearrange_sensors import (
@@ -14,6 +18,7 @@ class PickSkillPolicy(NnSkillPolicy):
         rnn_hidden_states,
         prev_actions,
         masks,
+        batch_idx,
     ) -> torch.BoolTensor:
         # Is the agent holding the object and is the end-effector at the
         # resting position?

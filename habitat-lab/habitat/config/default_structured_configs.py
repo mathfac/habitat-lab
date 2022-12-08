@@ -1,8 +1,14 @@
+#!/usr/bin/env python3
+
+# Copyright (c) Meta Platforms, Inc. and its affiliates.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from hydra.core.config_store import ConfigStore
-from omegaconf import MISSING
+from omegaconf import II, MISSING
 
 
 @dataclass
@@ -99,6 +105,7 @@ class ArmActionConfig(ActionConfig):
     type: str = "ArmAction"
     arm_controller: str = "ArmRelPosAction"
     grip_controller: Optional[str] = None
+    arm_joint_mask: Optional[List[int]] = None
     arm_joint_dimensionality: int = 7
     grasp_thresh_dist: float = 0.15
     disable_grip: bool = False
@@ -114,10 +121,7 @@ class BaseVelocityActionConfig(ActionConfig):
     lin_speed: float = 10.0
     ang_speed: float = 10.0
     allow_dyn_slide: bool = True
-    end_on_stop: bool = False
     allow_back: bool = True
-    min_abs_lin_speed: float = 1.0
-    min_abs_ang_speed: float = 1.0
 
 
 @dataclass
@@ -141,10 +145,7 @@ class OracleNavActionConfig(ActionConfig):
     dist_thresh: float = 0.2
     lin_speed: float = 10.0
     ang_speed: float = 10.0
-    min_abs_lin_speed: float = 1.0
-    min_abs_ang_speed: float = 1.0
     allow_dyn_slide: bool = True
-    end_on_stop: bool = False
     allow_back: bool = True
 
 
@@ -160,12 +161,12 @@ class AnswerActionConfig(ActionConfig):
 # # TASK_SENSORS
 # -----------------------------------------------------------------------------
 @dataclass
-class SensorConfig(HabitatBaseConfig):
+class LabSensorConfig(HabitatBaseConfig):
     type: str = MISSING
 
 
 @dataclass
-class PointGoalSensorConfig(SensorConfig):
+class PointGoalSensorConfig(LabSensorConfig):
     type: str = "PointGoalSensor"
     goal_format: str = "POLAR"
     dimensionality: int = 2
@@ -176,184 +177,185 @@ class PointGoalWithGPSCompassSensorConfig(PointGoalSensorConfig):
     type: str = "PointGoalWithGPSCompassSensor"
 
 
-class ObjectGoalSensorConfig(SensorConfig):
+@dataclass
+class ObjectGoalSensorConfig(LabSensorConfig):
     type: str = "ObjectGoalSensor"
     goal_spec: str = "TASK_CATEGORY_ID"
     goal_spec_max_val: int = 50
 
 
 @dataclass
-class ImageGoalSensorConfig(SensorConfig):
+class ImageGoalSensorConfig(LabSensorConfig):
     type: str = "ImageGoalSensor"
 
 
 @dataclass
-class InstanceImageGoalSensorConfig(SensorConfig):
+class InstanceImageGoalSensorConfig(LabSensorConfig):
     type: str = "InstanceImageGoalSensor"
 
 
 @dataclass
-class InstanceImageGoalHFOVSensorConfig(SensorConfig):
+class InstanceImageGoalHFOVSensorConfig(LabSensorConfig):
     type: str = "InstanceImageGoalHFOVSensor"
 
 
 @dataclass
-class HeadingSensorConfig(SensorConfig):
+class HeadingSensorConfig(LabSensorConfig):
     type: str = "HeadingSensor"
 
 
 @dataclass
-class CompassSensorConfig(SensorConfig):
+class CompassSensorConfig(LabSensorConfig):
     type: str = "CompassSensor"
 
 
 @dataclass
-class GPSSensorSensorConfig(SensorConfig):
+class GPSSensorConfig(LabSensorConfig):
     type: str = "GPSSensor"
     dimensionality: int = 2
 
 
 @dataclass
-class ProximitySensorConfig(SensorConfig):
+class ProximitySensorConfig(LabSensorConfig):
     type: str = "ProximitySensor"
     max_detection_radius: float = 2.0
 
 
 @dataclass
-class JointSensorConfig(SensorConfig):
+class JointSensorConfig(LabSensorConfig):
     type: str = "JointSensor"
     dimensionality: int = 7
 
 
 @dataclass
-class EEPositionSensorConfig(SensorConfig):
+class EEPositionSensorConfig(LabSensorConfig):
     type: str = "EEPositionSensor"
 
 
 @dataclass
-class IsHoldingSensorConfig(SensorConfig):
+class IsHoldingSensorConfig(LabSensorConfig):
     type: str = "IsHoldingSensor"
 
 
 @dataclass
-class RelativeRestingPositionSensorConfig(SensorConfig):
+class RelativeRestingPositionSensorConfig(LabSensorConfig):
     type: str = "RelativeRestingPositionSensor"
 
 
 @dataclass
-class JointVelocitySensorConfig(SensorConfig):
+class JointVelocitySensorConfig(LabSensorConfig):
     type: str = "JointVelocitySensor"
     dimensionality: int = 7
 
 
 @dataclass
-class OracleNavigationActionSensorConfig(SensorConfig):
+class OracleNavigationActionSensorConfig(LabSensorConfig):
     type: str = "OracleNavigationActionSensor"
 
 
 @dataclass
-class RestingPositionSensorConfig(SensorConfig):
+class RestingPositionSensorConfig(LabSensorConfig):
     type: str = "RestingPositionSensor"
 
 
 @dataclass
-class ArtJointSensorConfig(SensorConfig):
+class ArtJointSensorConfig(LabSensorConfig):
     type: str = "ArtJointSensor"
 
 
 @dataclass
-class NavGoalSensorConfig(SensorConfig):
+class NavGoalSensorConfig(LabSensorConfig):
     type: str = "NavGoalSensor"
 
 
 @dataclass
-class ArtJointSensorNoVelSensorConfig(SensorConfig):
+class ArtJointSensorNoVelSensorConfig(LabSensorConfig):
     type: str = "ArtJointSensorNoVel"  # TODO: add "Sensor" suffix
 
 
 @dataclass
-class MarkerRelPosSensorConfig(SensorConfig):
+class MarkerRelPosSensorConfig(LabSensorConfig):
     type: str = "MarkerRelPosSensor"
 
 
 @dataclass
-class TargetStartSensorConfig(SensorConfig):
+class TargetStartSensorConfig(LabSensorConfig):
     type: str = "TargetStartSensor"
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
 
 @dataclass
-class TargetCurrentSensorConfig(SensorConfig):
+class TargetCurrentSensorConfig(LabSensorConfig):
     type: str = "TargetCurrentSensor"
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
 
 @dataclass
-class GoalSensorConfig(SensorConfig):
+class GoalSensorConfig(LabSensorConfig):
     type: str = "GoalSensor"
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
 
 @dataclass
-class TargetOrGoalStartPointGoalSensorConfig(SensorConfig):
-    type: str = "TargetOrGoalStartPointGoalSensor"
+class NavGoalPointGoalSensorConfig(LabSensorConfig):
+    type: str = "NavGoalPointGoalSensor"
 
 
 @dataclass
-class GlobalPredicatesSensorConfig(SensorConfig):
+class GlobalPredicatesSensorConfig(LabSensorConfig):
     type: str = "GlobalPredicatesSensor"
 
 
 @dataclass
-class TargetStartGpsCompassSensorConfig(SensorConfig):
+class TargetStartGpsCompassSensorConfig(LabSensorConfig):
     type: str = "TargetStartGpsCompassSensor"
 
 
 @dataclass
-class TargetGoalGpsCompassSensorConfig(SensorConfig):
+class TargetGoalGpsCompassSensorConfig(LabSensorConfig):
     type: str = "TargetGoalGpsCompassSensor"
 
 
 @dataclass
-class NavToSkillSensorConfig(SensorConfig):
+class NavToSkillSensorConfig(LabSensorConfig):
     type: str = "NavToSkillSensor"
     num_skills: int = 8
 
 
 @dataclass
-class AbsTargetStartSensorConfig(SensorConfig):
+class AbsTargetStartSensorConfig(LabSensorConfig):
     type: str = "AbsTargetStartSensor"
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
 
 @dataclass
-class AbsGoalSensorConfig(SensorConfig):
+class AbsGoalSensorConfig(LabSensorConfig):
     type: str = "AbsGoalSensor"
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
 
 @dataclass
-class DistToNavGoalSensorConfig(SensorConfig):
+class DistToNavGoalSensorConfig(LabSensorConfig):
     type: str = "DistToNavGoalSensor"
 
 
 @dataclass
-class LocalizationSensorConfig(SensorConfig):
+class LocalizationSensorConfig(LabSensorConfig):
     type: str = "LocalizationSensor"
 
 
 @dataclass
-class QuestionSensorConfig(SensorConfig):
+class QuestionSensorConfig(LabSensorConfig):
     type: str = "QuestionSensor"
 
 
 @dataclass
-class InstructionSensorConfig(SensorConfig):
+class InstructionSensorConfig(LabSensorConfig):
     type: str = "InstructionSensor"
     instruction_sensor_uuid: str = "instruction"
 
@@ -392,7 +394,9 @@ class FogOfWarConfig:
 @dataclass
 class TopDownMapMeasurementConfig(MeasurementConfig):
     type: str = "TopDownMap"
-    max_episode_steps: int = EnvironmentConfig.max_episode_steps
+    max_episode_steps: int = (
+        EnvironmentConfig.max_episode_steps
+    )  # TODO : Use OmegaConf II()
     map_padding: int = 3
     map_resolution: int = 1024
     draw_source: bool = True
@@ -402,7 +406,7 @@ class TopDownMapMeasurementConfig(MeasurementConfig):
     draw_goal_positions: bool = True
     # axes aligned bounding boxes
     draw_goal_aabbs: bool = True
-    fog_of_war = FogOfWarConfig()
+    fog_of_war: FogOfWarConfig = FogOfWarConfig()
 
 
 @dataclass
@@ -444,6 +448,11 @@ class EndEffectorToRestDistanceMeasurementConfig(MeasurementConfig):
 
 
 @dataclass
+class EndEffectorToGoalDistanceMeasurementConfig(MeasurementConfig):
+    type: str = "EndEffectorToGoalDistance"
+
+
+@dataclass
 class ArtObjAtDesiredStateMeasurementConfig(MeasurementConfig):
     type: str = "ArtObjAtDesiredState"
     use_absolute_distance: bool = True
@@ -469,6 +478,7 @@ class ArtObjStateMeasurementConfig(MeasurementConfig):
 class ArtObjSuccessMeasurementConfig(MeasurementConfig):
     type: str = "ArtObjSuccess"
     rest_dist_threshold: float = 0.15
+    must_call_stop: bool = True
 
 
 @dataclass
@@ -509,7 +519,7 @@ class BadCalledTerminateMeasurementConfig(MeasurementConfig):
 @dataclass
 class NavToPosSuccMeasurementConfig(MeasurementConfig):
     type: str = "NavToPosSucc"
-    success_distance: float = 0.2
+    success_distance: float = 1.5
 
 
 @dataclass
@@ -518,14 +528,14 @@ class NavToObjRewardMeasurementConfig(MeasurementConfig):
     # reward the agent for facing the object?
     should_reward_turn: bool = True
     # what distance do we start giving the reward for facing the object?
-    turn_reward_dist: float = 0.1
+    turn_reward_dist: float = 3.0
     # multiplier on the angle distance to the goal.
     angle_dist_reward: float = 1.0
-    dist_reward: float = 10.0
-    constraint_violate_pen: float = 10.0
-    force_pen: float = 0.0
-    max_force_pen: float = 1.0
-    force_end_pen: float = 10.0
+    dist_reward: float = 1.0
+    constraint_violate_pen: float = 1.0
+    force_pen: float = 0.0001
+    max_force_pen: float = 0.01
+    force_end_pen: float = 1.0
 
 
 @dataclass
@@ -534,8 +544,7 @@ class NavToObjSuccessMeasurementConfig(MeasurementConfig):
     must_look_at_targ: bool = True
     must_call_stop: bool = True
     # distance in radians.
-    success_angle_dist: float = 0.15
-    heuristic_stop: bool = False
+    success_angle_dist: float = 0.261799
 
 
 @dataclass
@@ -583,19 +592,17 @@ class MoveObjectsRewardMeasurementConfig(MeasurementConfig):
 @dataclass
 class RearrangePickRewardMeasurementConfig(MeasurementConfig):
     type: str = "RearrangePickReward"
-    dist_reward: float = 20.0
-    succ_reward: float = 10.0
-    pick_reward: float = 20.0
-    constraint_violate_pen: float = 10.0
-    drop_pen: float = 5.0
-    wrong_pick_pen: float = 5.0
-    max_accum_force: float = 5000.0
-    force_pen: float = 0.001
-    max_force_pen: float = 1.0
-    force_end_pen: float = 10.0
+    dist_reward: float = 2.0
+    pick_reward: float = 2.0
+    constraint_violate_pen: float = 1.0
+    drop_pen: float = 0.5
+    wrong_pick_pen: float = 0.5
+    force_pen: float = 0.0001
+    max_force_pen: float = 0.01
+    force_end_pen: float = 1.0
     use_diff: bool = True
-    drop_obj_should_end: bool = False
-    wrong_pick_should_end: bool = False
+    drop_obj_should_end: bool = True
+    wrong_pick_should_end: bool = True
 
 
 @dataclass
@@ -613,16 +620,17 @@ class ObjAtGoalMeasurementConfig(MeasurementConfig):
 @dataclass
 class PlaceRewardMeasurementConfig(MeasurementConfig):
     type: str = "PlaceReward"
-    dist_reward: float = 20.0
-    succ_reward: float = 10.0
-    place_reward: float = 20.0
-    drop_pen: float = 5.0
+    dist_reward: float = 2.0
+    place_reward: float = 5.0
+    drop_pen: float = 0.0
     use_diff: bool = True
-    wrong_drop_should_end: bool = False
-    constraint_violate_pen: float = 10.0
-    force_pen: float = 0.001
-    max_force_pen: float = 1.0
-    force_end_pen: float = 10.0
+    use_ee_dist: bool = False
+    wrong_drop_should_end: bool = True
+    constraint_violate_pen: float = 0.0
+    force_pen: float = 0.0001
+    max_force_pen: float = 0.0
+    force_end_pen: float = 1.0
+    min_dist_to_goal: float = 0.15
 
 
 @dataclass
@@ -660,11 +668,6 @@ class DoesWantTerminateMeasurementConfig(MeasurementConfig):
 
 
 @dataclass
-class CompositeBadCalledTerminateMeasurementConfig(MeasurementConfig):
-    type: str = "CompositeBadCalledTerminate"
-
-
-@dataclass
 class CorrectAnswerMeasurementConfig(MeasurementConfig):
     type: str = "CorrectAnswer"
 
@@ -699,34 +702,38 @@ class TaskConfig(HabitatBaseConfig):
     end_on_success: bool = False
     # NAVIGATION task
     type: str = "Nav-v0"
-    sensors: List[str] = field(default_factory=list)
-    measurements: List[str] = field(default_factory=list)
+    # Temporary structure for sensors
+    lab_sensors: Dict[str, LabSensorConfig] = field(default_factory=dict)
+    measurements: Dict[str, MeasurementConfig] = field(default_factory=dict)
     goal_sensor_uuid: str = "pointgoal"
-    possible_actions: List[str] = field(
-        default_factory=lambda: [
-            "stop",
-            "move_forward",
-            "turn_left",
-            "turn_right",
-        ]
-    )
     # REARRANGE task
     count_obj_collisions: bool = True
-    settle_steps = 5
-    constraint_violation_ends_episode = True
-    constraint_violation_drops_object = False
+    settle_steps: int = 5
+    constraint_violation_ends_episode: bool = True
+    constraint_violation_drops_object: bool = False
     # Forced to regenerate the starts even if they are already cached
-    force_regenerate = False
+    force_regenerate: bool = False
     # Saves the generated starts to a cache if they are not already generated
+<<<<<<< HEAD
     should_save_to_cache = False
     must_look_at_targ = True
     object_in_hand_sample_prob = 0.167
+=======
+    should_save_to_cache: bool = False
+    must_look_at_targ: bool = True
+    object_in_hand_sample_prob: float = 0.167
+    min_start_distance: float = 3.0
+>>>>>>> upstream/main
     gfx_replay_dir = "data/replays"
     render_target: bool = True
+    # Spawn parameters
+    physics_stability_steps: int = 1
+    num_spawn_attempts: int = 200
+    spawn_max_dists_to_obj: float = 2.0
+    base_angle_noise: float = 0.523599
+    # EE sample parameters
     ee_sample_factor: float = 0.2
     ee_exclude_region: float = 0.0
-    # In radians
-    base_angle_noise: float = 0.15
     base_noise: float = 0.05
     spawn_region_scale: float = 0.2
     joint_max_impulse: float = -1.0
@@ -742,15 +749,17 @@ class TaskConfig(HabitatBaseConfig):
     easy_init: bool = False
     should_enforce_target_within_reach: bool = False
     # COMPOSITE task CONFIG
-    task_spec_base_path: str = "configs/tasks/rearrange/pddl/"
+    task_spec_base_path: str = "habitat/task/rearrange/pddl/"
     task_spec: str = ""
     # PDDL domain params
     pddl_domain_def: str = "replica_cad"
     obj_succ_thresh: float = 0.3
+    # Disable drop except for when the object is at its goal.
+    enable_safe_drop: bool = False
     art_succ_thresh: float = 0.15
     robot_at_thresh: float = 2.0
     filter_nav_to_tasks: List = field(default_factory=list)
-    actions: Any = MISSING
+    actions: Dict[str, ActionConfig] = MISSING
 
 
 @dataclass
@@ -767,6 +776,8 @@ class SimulatorSensorConfig(HabitatBaseConfig):
 class SimulatorCameraSensorConfig(SimulatorSensorConfig):
     hfov: int = 90  # horizontal field of view in degrees
     sensor_subtype: str = "PINHOLE"
+    noise_model: str = "None"
+    noise_model_kwargs: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -782,12 +793,14 @@ class HabitatSimRGBSensorConfig(SimulatorCameraSensorConfig):
 
 
 @dataclass
-class HabitatSimDepthSensorConfig(SimulatorDepthSensorConfig):
+class HabitatSimDepthSensorConfig(
+    SimulatorDepthSensorConfig, SimulatorCameraSensorConfig
+):
     type: str = "HabitatSimDepthSensor"
 
 
 @dataclass
-class HabitatSimSemanticSensorConfig(SimulatorSensorConfig):
+class HabitatSimSemanticSensorConfig(SimulatorCameraSensorConfig):
     type: str = "HabitatSimSemanticSensor"
 
 
@@ -847,26 +860,36 @@ class HabitatSimFisheyeSemanticSensorConfig(SimulatorFisheyeSensorConfig):
 @dataclass
 class HeadRGBSensorConfig(HabitatSimRGBSensorConfig):
     uuid: str = "robot_head_rgb"
+    width: int = 256
+    height: int = 256
 
 
 @dataclass
 class HeadDepthSensorConfig(HabitatSimDepthSensorConfig):
     uuid: str = "robot_head_depth"
+    width: int = 256
+    height: int = 256
 
 
 @dataclass
 class ArmRGBSensorConfig(HabitatSimRGBSensorConfig):
     uuid: str = "robot_arm_rgb"
+    width: int = 256
+    height: int = 256
 
 
 @dataclass
 class ArmDepthSensorConfig(HabitatSimDepthSensorConfig):
     uuid: str = "robot_arm_depth"
+    width: int = 256
+    height: int = 256
 
 
 @dataclass
 class ThirdRGBSensorConfig(HabitatSimRGBSensorConfig):
     uuid: str = "robot_third_rgb"
+    width: int = 512
+    height: int = 512
 
 
 @dataclass
@@ -879,11 +902,11 @@ class ThirdDepthSensorConfig(HabitatSimDepthSensorConfig):
 class AgentConfig(HabitatBaseConfig):
     height: float = 1.5
     radius: float = 0.1
-    sensors: List[str] = field(default_factory=lambda: ["rgb_sensor"])
+    sim_sensors: Dict[str, SimulatorSensorConfig] = field(default_factory=dict)
     is_set_start_state: bool = False
     start_position: List[float] = field(default_factory=lambda: [0, 0, 0])
     start_rotation: List[float] = field(default_factory=lambda: [0, 0, 0, 1])
-    joint_start_noise: float = 0.0
+    joint_start_noise: float = 0.1
     robot_urdf: str = "data/robots/hab_fetch/robots/hab_fetch.urdf"
     robot_type: str = "FetchRobot"
     ik_arm_urdf: str = "data/robots/hab_fetch/robots/fetch_onlyarm.urdf"
@@ -914,10 +937,10 @@ class HabitatSimV0Config(HabitatBaseConfig):
 class SimulatorConfig(HabitatBaseConfig):
     type: str = "Sim-v0"
     action_space_config: str = "v0"
+    action_space_config_arguments: Dict[str, Any] = field(default_factory=dict)
     forward_step_size: float = 0.25  # in metres
     create_renderer: bool = False
     requires_textures: bool = True
-    lag_observations: int = 0
     auto_sleep: bool = False
     step_physics: bool = True
     concur_render: bool = False
@@ -931,10 +954,11 @@ class SimulatorConfig(HabitatBaseConfig):
     scene_dataset: str = "default"
     # A list of directory or config paths to search in addition to the dataset
     # for object configs. should match the generated episodes for the task:
-    additional_object_paths: List = field(default_factory=list)
+    additional_object_paths: List[str] = field(default_factory=list)
     # Use config.seed (can't reference Config.seed) or define via code
     # otherwise it leads to circular references:
-    # seed = Config.seed
+    #
+    seed: int = II("habitat.seed")
     turn_angle: int = 10  # angle to rotate left or right in degrees
     tilt_angle: int = 15  # angle to tilt the camera up or down in degrees
     default_agent_id: int = 0
@@ -950,29 +974,30 @@ class SimulatorConfig(HabitatBaseConfig):
     ac_freq_ratio: int = 4
     load_objs: bool = False
     # Rearrange agent grasping
-    hold_thresh: float = 0.09
-    grasp_impulse: float = 1000.0
-    agents: List[str] = field(default_factory=lambda: ["agent_0"])
-    agent_0: AgentConfig = AgentConfig()
-    rgb_sensor: HabitatSimRGBSensorConfig = HabitatSimRGBSensorConfig()
-    depth_sensor: HabitatSimDepthSensorConfig = HabitatSimDepthSensorConfig()
+    hold_thresh: float = 0.15
+    grasp_impulse: float = 10000.0
+    # we assume agent(s) to be set explicitly
+    agents: Dict[str, AgentConfig] = MISSING
+    # agents_order specifies the order in which the agents
+    # are stored on the habitat-sim side.
+    # In other words, the order to return the observations and accept
+    # the actions when using the environment API.
+    # If the number of agents is greater than one,
+    # then agents_order has to be set explicitly.
+    agents_order: List[str] = MISSING
     habitat_sim_v0: HabitatSimV0Config = HabitatSimV0Config()
+    # ep_info is added to the config in some rearrange tasks inside
+    # merge_sim_episode_with_object_config
+    ep_info: Optional[Any] = None
 
 
 @dataclass
-class PyrobotConfig(HabitatBaseConfig):
-    # types of robots supported:
-    robots: List[str] = field(default_factory=lambda: ["locobot"])
-    robot: str = "locobot"
-    sensors: List[str] = field(
-        default_factory=lambda: ["rgb_sensor", "depth_sensor", "bump_sensor"]
-    )
-    base_controller: str = "proportional"
-    base_planner: str = "none"
+class PyrobotSensor(HabitatBaseConfig):
+    pass
 
 
 @dataclass
-class PyrobotVisualSensorConfig(HabitatBaseConfig):
+class PyrobotVisualSensorConfig(PyrobotSensor):
     type: str = MISSING
     height: int = 480
     width: int = 640
@@ -994,7 +1019,7 @@ class PyrobotDepthSensorConfig(PyrobotVisualSensorConfig):
 
 
 @dataclass
-class PyrobotBumpSensorConfig(HabitatBaseConfig):
+class PyrobotBumpSensorConfig(PyrobotSensor):
     type: str = "PyRobotBumpSensor"
 
 
@@ -1009,6 +1034,23 @@ class LocobotConfig(HabitatBaseConfig):
     camera_actions: List[str] = field(
         default_factory=lambda: ["set_pan", "set_tilt", "set_pan_tilt"]
     )
+
+
+@dataclass
+class PyrobotConfig(HabitatBaseConfig):
+    # types of robots supported:
+    robots: List[str] = field(default_factory=lambda: ["locobot"])
+    robot: str = "locobot"
+    sensors: Dict[str, PyrobotSensor] = field(
+        default_factory=lambda: {
+            "rgb_sensor": PyrobotRGBSensorConfig(),
+            "depth_sensor": PyrobotDepthSensorConfig(),
+            "bump_sensor": PyrobotBumpSensorConfig(),
+        }
+    )
+    base_controller: str = "proportional"
+    base_planner: str = "none"
+    locobot: LocobotConfig = LocobotConfig()
 
 
 @dataclass
@@ -1048,45 +1090,581 @@ class HabitatConfig(HabitatBaseConfig):
     env_task_gym_id: str = ""
     environment: EnvironmentConfig = EnvironmentConfig()
     simulator: SimulatorConfig = SimulatorConfig()
-    task: TaskConfig = TaskConfig()
-    dataset: DatasetConfig = DatasetConfig()
+    task: TaskConfig = MISSING
+    dataset: DatasetConfig = MISSING
+    gym: GymConfig = GymConfig()
 
 
 # -----------------------------------------------------------------------------
 # Register configs in the Hydra ConfigStore
 # -----------------------------------------------------------------------------
 cs = ConfigStore.instance()
-cs.store(group="habitat", name="config", node=HabitatConfig)
+
+cs.store(group="habitat", name="habitat_config_base", node=HabitatConfig)
 cs.store(
-    group="habitat",
-    name="environment",
+    group="habitat.environment",
+    name="environment_config_schema",
     node=EnvironmentConfig,
 )
 cs.store(
-    group="habitat",
-    name="task",
+    package="habitat.task",
+    group="habitat/task",
+    name="task_config_base",
     node=TaskConfig,
 )
+
+# Agent Config
 cs.store(
-    group="habitat.task.actions.stop",
+    group="habitat/simulator/agents",
+    name="agent_base",
+    node=AgentConfig,
+)
+
+cs.store(
+    package="habitat.task.actions.stop",
+    group="habitat/task/actions",
     name="stop",
     node=StopActionConfig,
 )
 cs.store(
-    group="habitat.task.actions.move_forward",
+    package="habitat.task.actions.move_forward",
+    group="habitat/task/actions",
     name="move_forward",
     node=MoveForwardActionConfig,
 )
 cs.store(
-    group="habitat.task.actions.turn_left",
+    package="habitat.task.actions.turn_left",
+    group="habitat/task/actions",
     name="turn_left",
     node=TurnLeftActionConfig,
 )
 cs.store(
-    group="habitat.task.actions.turn_right",
+    package="habitat.task.actions.turn_right",
+    group="habitat/task/actions",
     name="turn_right",
     node=TurnRightActionConfig,
 )
+cs.store(
+    package="habitat.task.actions.look_up",
+    group="habitat/task/actions",
+    name="look_up",
+    node=LookUpActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.look_down",
+    group="habitat/task/actions",
+    name="look_down",
+    node=LookDownActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.arm_action",
+    group="habitat/task/actions",
+    name="arm_action",
+    node=ArmActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.base_velocity",
+    group="habitat/task/actions",
+    name="base_velocity",
+    node=BaseVelocityActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.empty",
+    group="habitat/task/actions",
+    name="empty",
+    node=EmptyActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.rearrange_stop",
+    group="habitat/task/actions",
+    name="rearrange_stop",
+    node=RearrangeStopActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.answer",
+    group="habitat/task/actions",
+    name="answer",
+    node=AnswerActionConfig,
+)
+cs.store(
+    package="habitat.task.actions.oracle_nav_action",
+    group="habitat/task/actions",
+    name="oracle_nav_action",
+    node=OracleNavActionConfig,
+)
+
+# Dataset Config Schema
+cs.store(
+    package="habitat.dataset",
+    group="habitat/dataset",
+    name="dataset_config_schema",
+    node=DatasetConfig,
+)
+
+# Simulator Sensors
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="rgb_sensor",
+    node=HabitatSimRGBSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="depth_sensor",
+    node=HabitatSimDepthSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="semantic_sensor",
+    node=HabitatSimSemanticSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="equirect_rgb_sensor",
+    node=HabitatSimEquirectangularRGBSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="equirect_depth_sensor",
+    node=HabitatSimEquirectangularDepthSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="equirect_semantic_sensor",
+    node=HabitatSimEquirectangularSemanticSensorConfig,
+)
+
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="arm_depth_sensor",
+    node=ArmDepthSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="arm_rgb_sensor",
+    node=ArmRGBSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="head_depth_sensor",
+    node=HeadDepthSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="head_rgb_sensor",
+    node=HeadRGBSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="third_depth_sensor",
+    node=ThirdDepthSensorConfig,
+)
+
+cs.store(
+    group="habitat/simulator/sim_sensors",
+    name="third_rgb_sensor",
+    node=ThirdRGBSensorConfig,
+)
+
+
+# Task Sensors
+cs.store(
+    package="habitat.task.lab_sensors.gps_sensor",
+    group="habitat/task/lab_sensors",
+    name="gps_sensor",
+    node=GPSSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.compass_sensor",
+    group="habitat/task/lab_sensors",
+    name="compass_sensor",
+    node=CompassSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.pointgoal_with_gps_compass_sensor",
+    group="habitat/task/lab_sensors",
+    name="pointgoal_with_gps_compass_sensor",
+    node=PointGoalWithGPSCompassSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.objectgoal_sensor",
+    group="habitat/task/lab_sensors",
+    name="objectgoal_sensor",
+    node=ObjectGoalSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.imagegoal_sensor",
+    group="habitat/task/lab_sensors",
+    name="imagegoal_sensor",
+    node=ImageGoalSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.instance_imagegoal_sensor",
+    group="habitat/task/lab_sensors",
+    name="instance_imagegoal_sensor",
+    node=InstanceImageGoalSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.instance_imagegoal_hfov_sensor",
+    group="habitat/task/lab_sensors",
+    name="instance_imagegoal_hfov_sensor",
+    node=InstanceImageGoalHFOVSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.target_start_sensor",
+    group="habitat/task/lab_sensors",
+    name="target_start_sensor",
+    node=TargetStartSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.goal_sensor",
+    group="habitat/task/lab_sensors",
+    name="goal_sensor",
+    node=GoalSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.abs_target_start_sensor",
+    group="habitat/task/lab_sensors",
+    name="abs_target_start_sensor",
+    node=AbsTargetStartSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.abs_goal_sensor",
+    group="habitat/task/lab_sensors",
+    name="abs_goal_sensor",
+    node=AbsGoalSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.joint_sensor",
+    group="habitat/task/lab_sensors",
+    name="joint_sensor",
+    node=JointSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.end_effector_sensor",
+    group="habitat/task/lab_sensors",
+    name="end_effector_sensor",
+    node=EEPositionSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.is_holding_sensor",
+    group="habitat/task/lab_sensors",
+    name="is_holding_sensor",
+    node=IsHoldingSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.relative_resting_pos_sensor",
+    group="habitat/task/lab_sensors",
+    name="relative_resting_pos_sensor",
+    node=RelativeRestingPositionSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.instruction_sensor",
+    group="habitat/task/lab_sensors",
+    name="instruction_sensor",
+    node=InstructionSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.question_sensor",
+    group="habitat/task/lab_sensors",
+    name="question_sensor",
+    node=QuestionSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.object_sensor",
+    group="habitat/task/lab_sensors",
+    name="object_sensor",
+    node=TargetCurrentSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.joint_velocity_sensor",
+    group="habitat/task/lab_sensors",
+    name="joint_velocity_sensor",
+    node=JointVelocitySensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.target_start_gps_compass_sensor",
+    group="habitat/task/lab_sensors",
+    name="target_start_gps_compass_sensor",
+    node=TargetStartGpsCompassSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.target_goal_gps_compass_sensor",
+    group="habitat/task/lab_sensors",
+    name="target_goal_gps_compass_sensor",
+    node=TargetGoalGpsCompassSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.nav_to_skill_sensor",
+    group="habitat/task/lab_sensors",
+    name="nav_to_skill_sensor",
+    node=NavToSkillSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.nav_goal_sensor",
+    group="habitat/task/lab_sensors",
+    name="nav_goal_sensor",
+    node=NavGoalPointGoalSensorConfig,
+)
+
+
+# Task Measurements
+cs.store(
+    package="habitat.task.measurements.top_down_map",
+    group="habitat/task/measurements",
+    name="top_down_map",
+    node=TopDownMapMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.distance_to_goal",
+    group="habitat/task/measurements",
+    name="distance_to_goal",
+    node=DistanceToGoalMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.distance_to_goal_reward",
+    group="habitat/task/measurements",
+    name="distance_to_goal_reward",
+    node=DistanceToGoalRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.success",
+    group="habitat/task/measurements",
+    name="success",
+    node=SuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.spl",
+    group="habitat/task/measurements",
+    name="spl",
+    node=SPLMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.soft_spl",
+    group="habitat/task/measurements",
+    name="soft_spl",
+    node=SoftSPLMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.num_steps",
+    group="habitat/task/measurements",
+    name="num_steps",
+    node=NumStepsMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.robot_force",
+    group="habitat/task/measurements",
+    name="robot_force",
+    node=RobotForceMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.force_terminate",
+    group="habitat/task/measurements",
+    name="force_terminate",
+    node=ForceTerminateMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.end_effector_to_object_distance",
+    group="habitat/task/measurements",
+    name="end_effector_to_object_distance",
+    node=EndEffectorToObjectDistanceMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.end_effector_to_rest_distance",
+    group="habitat/task/measurements",
+    name="end_effector_to_rest_distance",
+    node=EndEffectorToRestDistanceMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.end_effector_to_goal_distance",
+    group="habitat/task/measurements",
+    name="end_effector_to_goal_distance",
+    node=EndEffectorToGoalDistanceMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.did_pick_object",
+    group="habitat/task/measurements",
+    name="did_pick_object",
+    node=DidPickObjectMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.did_violate_hold_constraint",
+    group="habitat/task/measurements",
+    name="did_violate_hold_constraint",
+    node=DidViolateHoldConstraintMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.pick_reward",
+    group="habitat/task/measurements",
+    name="pick_reward",
+    node=RearrangePickRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.pick_success",
+    group="habitat/task/measurements",
+    name="pick_success",
+    node=RearrangePickSuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.answer_accuracy",
+    group="habitat/task/measurements",
+    name="answer_accuracy",
+    node=AnswerAccuracyMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.episode_info",
+    group="habitat/task/measurements",
+    name="episode_info",
+    node=EpisodeInfoMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.robot_colls",
+    group="habitat/task/measurements",
+    name="robot_colls",
+    node=RobotCollisionsMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.object_to_goal_distance",
+    group="habitat/task/measurements",
+    name="object_to_goal_distance",
+    node=ObjectToGoalDistanceMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.obj_at_goal",
+    group="habitat/task/measurements",
+    name="obj_at_goal",
+    node=ObjAtGoalMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.place_success",
+    group="habitat/task/measurements",
+    name="place_success",
+    node=PlaceSuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.place_reward",
+    group="habitat/task/measurements",
+    name="place_reward",
+    node=PlaceRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.move_objects_reward",
+    group="habitat/task/measurements",
+    name="move_objects_reward",
+    node=MoveObjectsRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.does_want_terminate",
+    group="habitat/task/measurements",
+    name="does_want_terminate",
+    node=DoesWantTerminateMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.composite_success",
+    group="habitat/task/measurements",
+    name="composite_success",
+    node=CompositeSuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.gfx_replay_measure",
+    group="habitat/task/measurements",
+    name="gfx_replay_measure",
+    node=GfxReplayMeasureMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.composite_stage_goals",
+    group="habitat/task/measurements",
+    name="composite_stage_goals",
+    node=CompositeStageGoalsMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.ee_dist_to_marker",
+    group="habitat/task/measurements",
+    name="ee_dist_to_marker",
+    node=EndEffectorDistToMarkerMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.art_obj_at_desired_state",
+    group="habitat/task/measurements",
+    name="art_obj_at_desired_state",
+    node=ArtObjAtDesiredStateMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.art_obj_state",
+    group="habitat/task/measurements",
+    name="art_obj_state",
+    node=ArtObjStateMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.art_obj_success",
+    group="habitat/task/measurements",
+    name="art_obj_success",
+    node=ArtObjSuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.art_obj_reward",
+    group="habitat/task/measurements",
+    name="art_obj_reward",
+    node=ArtObjRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.nav_to_pos_succ",
+    group="habitat/task/measurements",
+    name="nav_to_pos_succ",
+    node=NavToPosSuccMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.rot_dist_to_goal",
+    group="habitat/task/measurements",
+    name="rot_dist_to_goal",
+    node=RotDistToGoalMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.rearrange_nav_to_obj_success",
+    group="habitat/task/measurements",
+    name="rearrange_nav_to_obj_success",
+    node=NavToObjSuccessMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.rearrange_nav_to_obj_reward",
+    group="habitat/task/measurements",
+    name="rearrange_nav_to_obj_reward",
+    node=NavToObjRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.bad_called_terminate",
+    group="habitat/task/measurements",
+    name="bad_called_terminate",
+    node=BadCalledTerminateMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.dist_to_goal",
+    group="habitat/task/measurements",
+    name="dist_to_goal",
+    node=DistToGoalMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.rearrange_reach_reward",
+    group="habitat/task/measurements",
+    name="rearrange_reach_reward",
+    node=RearrangeReachRewardMeasurementConfig,
+)
+cs.store(
+    package="habitat.task.measurements.rearrange_reach_success",
+    group="habitat/task/measurements",
+    name="rearrange_reach_success",
+    node=RearrangeReachSuccessMeasurementConfig,
+)
+
 
 from hydra.core.config_search_path import ConfigSearchPath
 from hydra.core.plugins import Plugins

@@ -284,6 +284,11 @@ class TargetStartSensorConfig(LabSensorConfig):
     goal_format: str = "CARTESIAN"
     dimensionality: int = 3
 
+@dataclass
+class FrozenTargetStartSensorConfig(LabSensorConfig):
+    type: str = "FrozenTargetStartSensor"
+    goal_format: str = "CARTESIAN"
+    dimensionality: int = 3
 
 @dataclass
 class TargetCurrentSensorConfig(LabSensorConfig):
@@ -1318,6 +1323,12 @@ cs.store(
     group="habitat/task/lab_sensors",
     name="target_start_sensor",
     node=TargetStartSensorConfig,
+)
+cs.store(
+    package="habitat.task.lab_sensors.frozen_target_start_sensor",
+    group="habitat/task/lab_sensors",
+    name="frozen_target_start_sensor",
+    node=FrozenTargetStartSensorConfig,
 )
 cs.store(
     package="habitat.task.lab_sensors.goal_sensor",

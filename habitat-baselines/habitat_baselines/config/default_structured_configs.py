@@ -237,11 +237,24 @@ class PolicyConfig(HabitatBaselinesBaseConfig):
     action_dist: ActionDistributionConfig = ActionDistributionConfig()
     obs_transforms: Dict[str, ObsTransformConfig] = field(default_factory=dict)
     hierarchical_policy: HierarchicalPolicy = MISSING
+    input_image_size: int = 128
+    rnn_type: str = "GRU"
+    hidden_size: int = 512
+    num_recurrent_layers: int = 2
+    use_augmentations: bool = True
+    use_augmentations_test_time: bool = True
+    freeze_backbone: bool = False
+    global_pool: bool = False
+    use_cls: bool = False
 
 
 @dataclass
 class PPOConfig(HabitatBaselinesBaseConfig):
     """Proximal policy optimization config"""
+
+    use_adamw: bool = False
+    encoder_lr: float = 2.0e-6
+    wd: float = 1.0e-6
 
     clip_param: float = 0.2
     ppo_epoch: int = 4

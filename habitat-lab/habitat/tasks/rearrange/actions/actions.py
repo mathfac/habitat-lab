@@ -154,6 +154,39 @@ class ArmRelPosAction(RobotAction):
 
 
 @registry.register_task_action
+class NoisyArmRelPosAction(RobotAction):
+    """
+    The arm motor targets are offset by the delta joint values specified by the
+    action
+    """
+    def __init__(self, *args, sim: RearrangeSim, **kwargs):
+        self.delta_pos = None
+        super().__init__(*args, sim=sim, **kwargs)
+        
+    @property
+    def action_space(self):
+        return spaces.Box(
+            shape=(self._config.arm_joint_dimensionality,),
+            low=-1,
+            high=1,
+            dtype=np.float32,
+        )
+
+    def step(self, delta_pos, should_step=True, *args, **kwargs):
+        # clip from -1 to 1
+        delta_pos = np.clip(delta_pos, -1, 1)
+        delta_pos *= self._config.delta_pos_limit
+
+        # Add noise
+        # .001 variance corresponds to a 1.5% to 2% absolute error
+        delta_pos += np.random.normal(0, .001, delta_pos.shape)
+
+        # The actual joint positions
+        self._sim: RearrangeSim
+        self.delta_pos = delta_pos
+        self.cur_robot.arm_motor_pos = delta_pos + self.cur_robot.arm_motor_pos
+
+@registry.register_task_action
 class ArmRelPosKinematicAction(RobotAction):
     """
     The arm motor targets are offset by the delta joint values specified by the

@@ -54,7 +54,10 @@ class PPO(nn.Module):
         num_mini_batch: int,
         value_loss_coef: float,
         entropy_coef: float,
+        use_adamw: Optional[bool] = False,
         lr: Optional[float] = None,
+        encoder_lr: Optional[float] = None,
+        wd: Optional[float] = None,
         eps: Optional[float] = None,
         max_grad_norm: Optional[float] = None,
         use_clipped_value_loss: bool = False,
@@ -98,26 +101,48 @@ class PPO(nn.Module):
         self.use_normalized_advantage = use_normalized_advantage
 
         params = list(filter(lambda p: p.requires_grad, self.parameters()))
-
+        
         if len(params) > 0:
-            optim_cls = optim.Adam
-            optim_kwargs = dict(
-                params=params,
-                lr=lr,
-                eps=eps,
-            )
-            signature = inspect.signature(optim_cls.__init__)
-            if "foreach" in signature.parameters:
-                optim_kwargs["foreach"] = True
-            else:
-                try:
-                    import torch.optim._multi_tensor
-                except ImportError:
-                    pass
-                else:
-                    optim_cls = torch.optim._multi_tensor.Adam
+            if use_adamw:
+                visual_encoder_params, other_params = [], []
+                for name, param in self.named_parameters():
+                    if param.requires_grad:
+                        if (
+                            "net.visual_encoder.backbone" in name
+                            or "net.goal_visual_encoder.backbone" in name
+                        ):
+                            visual_encoder_params.append(param)
+                        else:
+                            other_params.append(param)
 
-            self.optimizer = optim_cls(**optim_kwargs)
+                self.optimizer = optim.AdamW(
+                    [
+                        {"params": visual_encoder_params, "lr": encoder_lr},
+                        {"params": other_params, "lr": lr},
+                    ],
+                    lr=lr,
+                    weight_decay=wd,
+                    eps=eps,
+                )
+            else:
+                optim_cls = optim.Adam
+                optim_kwargs = dict(
+                    params=params,
+                    lr=lr,
+                    eps=eps,
+                )
+                signature = inspect.signature(optim_cls.__init__)
+                if "foreach" in signature.parameters:
+                    optim_kwargs["foreach"] = True
+                else:
+                    try:
+                        import torch.optim._multi_tensor
+                    except ImportError:
+                        pass
+                    else:
+                        optim_cls = torch.optim._multi_tensor.Adam
+
+                self.optimizer = optim_cls(**optim_kwargs)
         else:
             self.optimizer = None
 

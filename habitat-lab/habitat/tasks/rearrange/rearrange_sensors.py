@@ -90,6 +90,7 @@ class FrozenTargetStartSensor(UsesRobotInterface, MultiObjSensor):
         if not hasattr(self, 'current_episode_id'):
             self.current_episode_id = None
 
+        # Update the goal whenever we start a new episode
         if self.current_episode_id != episode.episode_id:
             self.global_T = self._sim.get_robot_data(self.robot_id).robot.ee_transform
             self.current_episode_id = episode.episode_id

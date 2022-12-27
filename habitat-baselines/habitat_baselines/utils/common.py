@@ -58,7 +58,7 @@ else:
 
 
 def cosine_decay(progress: float) -> float:
-    progress = min(max(progress, 0.0), 1.0)
+    progress = .95 * min(max(progress, 0.0), 1.0)
 
     return (1.0 + math.cos(progress * math.pi)) / 2.0
 
@@ -366,12 +366,18 @@ def poll_checkpoint_folder(
     assert os.path.isdir(checkpoint_folder), (
         f"invalid checkpoint folder " f"path {checkpoint_folder}"
     )
-    models_paths = list(
-        filter(
-            lambda name: "latest" not in name,
-            filter(os.path.isfile, glob.glob(checkpoint_folder + "/*")),
-        )
-    )
+    # This is the normal way to do it with habitat but it breaks with the
+    # syntax we have in eaif ([dataset1, dataset2, ...])
+    #models_paths = list(
+    #    filter(
+    #        lambda name: "latest" not in name,
+    #        filter(os.path.isfile, glob.glob(checkpoint_folder + "/*")),
+    #    )
+    #)
+    
+    models_paths = [f'{checkpoint_folder}/{filename}' for filename in os.listdir(checkpoint_folder) if filename != 'latest']
+    models_paths = [path for path in models_paths if os.path.isfile(path)]
+
     models_paths.sort(key=os.path.getmtime)
     ind = previous_ckpt_ind + 1
     if ind < len(models_paths):

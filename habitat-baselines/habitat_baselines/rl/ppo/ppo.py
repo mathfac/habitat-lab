@@ -103,18 +103,17 @@ class PPO(nn.Module):
         params = list(filter(lambda p: p.requires_grad, self.parameters()))
         
         if len(params) > 0:
+            visual_encoder_params, other_params = [], []
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    if (
+                        "net.visual_encoder.backbone" in name
+                        or "net.goal_visual_encoder.backbone" in name
+                    ):
+                        visual_encoder_params.append(param)
+                    else:
+                        other_params.append(param)
             if use_adamw:
-                visual_encoder_params, other_params = [], []
-                for name, param in self.named_parameters():
-                    if param.requires_grad:
-                        if (
-                            "net.visual_encoder.backbone" in name
-                            or "net.goal_visual_encoder.backbone" in name
-                        ):
-                            visual_encoder_params.append(param)
-                        else:
-                            other_params.append(param)
-
                 self.optimizer = optim.AdamW(
                     [
                         {"params": visual_encoder_params, "lr": encoder_lr},
@@ -126,11 +125,21 @@ class PPO(nn.Module):
                 )
             else:
                 optim_cls = optim.Adam
-                optim_kwargs = dict(
-                    params=params,
-                    lr=lr,
-                    eps=eps,
-                )
+                use_different_lr_for_encoder = True
+                if use_different_lr_for_encoder:
+                    optim_kwargs = dict(
+                        params=[
+                            {"params": visual_encoder_params, "lr": encoder_lr},
+                            {"params": other_params, "lr": lr},
+                        ],
+                        eps=eps,
+                    )
+                else:
+                    optim_kwargs = dict(
+                        params=params,
+                        lr=lr,
+                        eps=eps,
+                    )
                 signature = inspect.signature(optim_cls.__init__)
                 if "foreach" in signature.parameters:
                     optim_kwargs["foreach"] = True

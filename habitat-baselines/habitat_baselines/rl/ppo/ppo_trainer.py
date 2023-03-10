@@ -65,6 +65,7 @@ from habitat_baselines.rl.thrl.trained_hierarchical_policy import (  # noqa: F40
 )
 from habitat_baselines.rl.ppo import PPO
 from habitat_baselines.rl.ppo.policy import NetPolicy
+from habitat2_eaif.policy import EAIPolicy
 from habitat_baselines.utils.common import (
     batch_obs,
     generate_video,

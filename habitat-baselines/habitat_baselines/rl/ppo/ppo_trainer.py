@@ -11,11 +11,12 @@ import time
 from collections import defaultdict, deque
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+import gym
 import numpy as np
 import torch
 import tqdm
-import gym
 from gym import spaces
+from habitat2_vc.policy import EAIPolicy
 from omegaconf import OmegaConf
 from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
@@ -60,12 +61,11 @@ from habitat_baselines.rl.ddppo.policy import (  # noqa: F401.
 from habitat_baselines.rl.hrl.hierarchical_policy import (  # noqa: F401.
     HierarchicalPolicy,
 )
+from habitat_baselines.rl.ppo import PPO
+from habitat_baselines.rl.ppo.policy import NetPolicy
 from habitat_baselines.rl.thrl.trained_hierarchical_policy import (  # noqa: F401.
     TrainedHierarchicalPolicy,
 )
-from habitat_baselines.rl.ppo import PPO
-from habitat_baselines.rl.ppo.policy import NetPolicy
-from habitat2_eaif.policy import EAIPolicy
 from habitat_baselines.utils.common import (
     batch_obs,
     generate_video,
@@ -146,7 +146,13 @@ class PPOTrainer(BaseRLTrainer):
         )
 
         observation_space = self.obs_space
-        observation_space = dict([(k,v) for k,v in observation_space.items() if k != 'robot_third_rgb'])
+        observation_space = dict(
+            [
+                (k, v)
+                for k, v in observation_space.items()
+                if k != "robot_third_rgb"
+            ]
+        )
         observation_space = gym.spaces.Dict(observation_space)
         self.obs_transforms = get_active_obs_transforms(self.config)
         observation_space = apply_obs_transforms_obs_space(
@@ -814,9 +820,7 @@ class PPOTrainer(BaseRLTrainer):
             while not self.is_done():
                 profiling_wrapper.on_start_step()
                 profiling_wrapper.range_push("train update")
-                if (
-                    ppo_cfg.use_linear_clip_decay
-                ):
+                if ppo_cfg.use_linear_clip_decay:
                     self.agent.clip_param = ppo_cfg.clip_param * (
                         1 - self.percent_done()
                     )
@@ -899,7 +903,6 @@ class PPOTrainer(BaseRLTrainer):
                     lr_scheduler.step()  # type: ignore
 
                 losses = self._coalesce_post_step(losses, count_steps_delta)
-            
 
                 self._training_log(writer, losses, prev_time)
 
